@@ -23,6 +23,8 @@ const navLinks = [
   { href: "/catalogo", label: "Catálogo" },
 ]
 
+const adminNavLink = { href: "/admin/produtos", label: "Admin" }
+
 export function Topbar() {
   const pathname = usePathname()
   const user = useAuthUser()
@@ -74,6 +76,19 @@ export function Topbar() {
               </Link>
             )
           })}
+          {user?.role === "admin" && (
+            <Link
+              href={adminNavLink.href}
+              className={cn(
+                "text-ui-md transition-colors",
+                pathname.startsWith("/admin")
+                  ? "text-foreground underline decoration-1 underline-offset-4"
+                  : "text-text-muted hover:text-text-secondary"
+              )}
+            >
+              {adminNavLink.label}
+            </Link>
+          )}
         </nav>
       </div>
 

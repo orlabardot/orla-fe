@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, LibraryBig } from "lucide-react"
+import { LayoutDashboard, LibraryBig, Settings } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -56,6 +56,21 @@ export function SidebarSheet() {
               </Link>
             )
           })}
+          {user?.role === "admin" && (
+            <Link
+              href="/admin/produtos"
+              onClick={() => setSidebarOpen(false)}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-ui-md transition-colors",
+                pathname.startsWith("/admin")
+                  ? "border-l-2 border-brand bg-brand-subtle text-foreground"
+                  : "text-text-muted hover:bg-brand-subtle hover:text-text-secondary"
+              )}
+            >
+              <Settings className="size-4" />
+              Admin
+            </Link>
+          )}
         </nav>
 
         <div className="border-t border-border px-4 py-4">
