@@ -32,6 +32,32 @@ export interface LoginResponse {
   user: AuthUser
 }
 
+// ─── Usuários (gestão via admin) ───────────────────────────────────────────
+
+export interface ManagedUser {
+  id: string
+  name: string
+  email: string
+  role: Role
+  isActive: boolean
+  createdAt: string
+}
+
+export interface CreateUserBody {
+  name: string
+  email: string
+  password: string
+  role: Role
+}
+
+export interface UpdateUserBody {
+  name?: string
+  email?: string
+  role?: Role
+  isActive?: boolean
+  password?: string
+}
+
 export interface JWTPayload {
   sub: string
   tenantId: string
