@@ -1,12 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import { Check, ChevronsUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,16 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import { Badge } from "@/components/ui/badge"
+import { TagsMultiSelect } from "@/components/domain/tags-multi-select"
 import { cn } from "@/lib/utils"
 import { getApiErrorMessage } from "@/lib/api-error"
 import { listCategories } from "@/services/categories.service"
@@ -58,7 +47,6 @@ export function ProductForm({ mode, productId, defaultValues }: ProductFormProps
   const categories = useQuery({ queryKey: ["categories"], queryFn: listCategories })
   const brands = useQuery({ queryKey: ["brands"], queryFn: listBrands })
   const tags = useQuery({ queryKey: ["tags"], queryFn: listTags })
-  const [tagsOpen, setTagsOpen] = useState(false)
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -96,7 +84,6 @@ export function ProductForm({ mode, productId, defaultValues }: ProductFormProps
 
   const isSaving = createMutation.isPending || updateMutation.isPending
   const selectedTagIds = form.watch("tagIds")
-  const selectedTags = tags.data?.filter((tag) => selectedTagIds.includes(tag.id)) ?? []
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-2xl space-y-8">
@@ -269,55 +256,11 @@ export function ProductForm({ mode, productId, defaultValues }: ProductFormProps
       <section className="space-y-4">
         <h2 className="font-playfair text-heading text-foreground">Tags</h2>
 
-        <Popover open={tagsOpen} onOpenChange={setTagsOpen}>
-          <PopoverTrigger
-            render={
-              <Button variant="outline" className="w-full justify-between font-normal" />
-            }
-          >
-            <span className="flex flex-wrap gap-1">
-              {selectedTags.length ? (
-                selectedTags.map((tag) => (
-                  <Badge key={tag.id} variant="secondary">
-                    {tag.name}
-                  </Badge>
-                ))
-              ) : (
-                <span className="text-text-muted">Selecionar tags</span>
-              )}
-            </span>
-            <ChevronsUpDown className="size-4 text-text-muted" />
-          </PopoverTrigger>
-          <PopoverContent className="w-72 p-0">
-            <Command>
-              <CommandInput placeholder="Buscar tag..." />
-              <CommandList>
-                <CommandEmpty>Nenhuma tag encontrada.</CommandEmpty>
-                <CommandGroup>
-                  {tags.data?.map((tag) => {
-                    const checked = selectedTagIds.includes(tag.id)
-                    return (
-                      <CommandItem
-                        key={tag.id}
-                        onSelect={() => {
-                          form.setValue(
-                            "tagIds",
-                            checked
-                              ? selectedTagIds.filter((id) => id !== tag.id)
-                              : [...selectedTagIds, tag.id]
-                          )
-                        }}
-                      >
-                        <Check className={cn("size-4", checked ? "opacity-100" : "opacity-0")} />
-                        {tag.name}
-                      </CommandItem>
-                    )
-                  })}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+        <TagsMultiSelect
+          tags={tags.data ?? []}
+          selectedIds={selectedTagIds}
+          onChange={(ids) => form.setValue("tagIds", ids)}
+        />
       </section>
 
       <div className="flex justify-end gap-3 border-t border-border pt-6">

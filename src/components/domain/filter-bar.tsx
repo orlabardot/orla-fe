@@ -15,8 +15,10 @@ import {
 } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Slider } from "@/components/ui/slider"
+import { TagsMultiSelect } from "@/components/domain/tags-multi-select"
 import { listBrands } from "@/services/brands.service"
 import { listCategories } from "@/services/categories.service"
+import { listTags } from "@/services/tags.service"
 import { frameTypeOptions } from "@/schemas/product.schema"
 import { useSyncedSearchInput } from "@/hooks/use-synced-search-input"
 import type { useFilters } from "@/hooks/use-filters"
@@ -30,6 +32,7 @@ type FiltersApi = ReturnType<typeof useFilters>
 export function FilterBar({
   filters,
   setFilter,
+  setTagIds,
   setRange,
   clearFilters,
   activeFilterCount,
@@ -40,6 +43,7 @@ export function FilterBar({
 
   const brands = useQuery({ queryKey: ["brands"], queryFn: listBrands })
   const categories = useQuery({ queryKey: ["categories"], queryFn: listCategories })
+  const tags = useQuery({ queryKey: ["tags"], queryFn: listTags })
 
   return (
     <div className="border-b border-border bg-bg-surface px-4 py-3 md:px-6">
@@ -121,6 +125,14 @@ export function FilterBar({
           </SelectContent>
         </Select>
 
+        <TagsMultiSelect
+          tags={tags.data ?? []}
+          selectedIds={filters.tagIds}
+          onChange={setTagIds}
+          placeholder="Tags"
+          className="w-36"
+        />
+
         <RangePopover
           label="Ponte"
           bounds={BRIDGE_BOUNDS}
@@ -146,9 +158,13 @@ export function FilterBar({
       <ActiveFilterBadges
         filters={filters}
         setFilter={setFilter}
+        setTagIds={setTagIds}
         setRange={setRange}
         brandName={brands.data?.find((b) => b.id === filters.brandId)?.name}
         categoryName={categories.data?.find((c) => c.id === filters.categoryId)?.name}
+        tagNames={tags.data
+          ?.filter((tag) => filters.tagIds.includes(tag.id))
+          .map((tag) => tag.name)}
       />
     </div>
   )
@@ -205,12 +221,15 @@ function RangePopover({
 function ActiveFilterBadges({
   filters,
   setFilter,
+  setTagIds,
   setRange,
   brandName,
   categoryName,
-}: Pick<FiltersApi, "filters" | "setFilter" | "setRange"> & {
+  tagNames,
+}: Pick<FiltersApi, "filters" | "setFilter" | "setTagIds" | "setRange"> & {
   brandName?: string
   categoryName?: string
+  tagNames?: string[]
 }) {
   const badges: { key: string; label: string; onRemove: () => void }[] = []
 
@@ -232,6 +251,12 @@ function ActiveFilterBadges({
       key: "categoryId",
       label: categoryName ?? "Categoria",
       onRemove: () => setFilter("categoryId", ""),
+    })
+  if (filters.tagIds.length)
+    badges.push({
+      key: "tagIds",
+      label: tagNames?.length ? `Tags: ${tagNames.join(", ")}` : "Tags",
+      onRemove: () => setTagIds([]),
     })
   if (filters.bridgeMin || filters.bridgeMax)
     badges.push({

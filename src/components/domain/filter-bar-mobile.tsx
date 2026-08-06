@@ -21,8 +21,10 @@ import {
   SheetTitle,
   SheetFooter,
 } from "@/components/ui/sheet"
+import { TagsMultiSelect } from "@/components/domain/tags-multi-select"
 import { listBrands } from "@/services/brands.service"
 import { listCategories } from "@/services/categories.service"
+import { listTags } from "@/services/tags.service"
 import { frameTypeOptions } from "@/schemas/product.schema"
 import { useSyncedSearchInput } from "@/hooks/use-synced-search-input"
 import type { useFilters } from "@/hooks/use-filters"
@@ -34,6 +36,7 @@ type FiltersApi = ReturnType<typeof useFilters>
 export function FilterBarMobile({
   filters,
   setFilter,
+  setTagIds,
   setRange,
   clearFilters,
   activeFilterCount,
@@ -45,6 +48,7 @@ export function FilterBarMobile({
 
   const brands = useQuery({ queryKey: ["brands"], queryFn: listBrands })
   const categories = useQuery({ queryKey: ["categories"], queryFn: listCategories })
+  const tags = useQuery({ queryKey: ["tags"], queryFn: listTags })
 
   const badges = [
     filters.frameType && { key: "frameType", label: filters.frameType },
@@ -55,6 +59,10 @@ export function FilterBarMobile({
     filters.categoryId && {
       key: "categoryId",
       label: categories.data?.find((c) => c.id === filters.categoryId)?.name ?? "Categoria",
+    },
+    filters.tagIds.length && {
+      key: "tagIds",
+      label: `Tags (${filters.tagIds.length})`,
     },
   ].filter(Boolean) as { key: string; label: string }[]
 
@@ -174,6 +182,15 @@ export function FilterBarMobile({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <TagsMultiSelect
+                tags={tags.data ?? []}
+                selectedIds={filters.tagIds}
+                onChange={setTagIds}
+              />
             </div>
 
             <div className="space-y-2">
