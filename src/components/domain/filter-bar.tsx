@@ -24,6 +24,7 @@ import { useSyncedSearchInput } from "@/hooks/use-synced-search-input"
 import type { useFilters } from "@/hooks/use-filters"
 
 const ALL_VALUE = "all"
+const SIZE_BOUNDS: [number, number] = [40, 60]
 const BRIDGE_BOUNDS: [number, number] = [10, 24]
 const TEMPLE_BOUNDS: [number, number] = [120, 160]
 
@@ -133,6 +134,13 @@ export function FilterBar({
           className="w-36"
         />
 
+        <RangePopover
+          label="Tamanho"
+          bounds={SIZE_BOUNDS}
+          min={filters.sizeMin}
+          max={filters.sizeMax}
+          onCommit={(min, max) => setRange("sizeMin", "sizeMax", min, max)}
+        />
         <RangePopover
           label="Ponte"
           bounds={BRIDGE_BOUNDS}
@@ -257,6 +265,12 @@ function ActiveFilterBadges({
       key: "tagIds",
       label: tagNames?.length ? `Tags: ${tagNames.join(", ")}` : "Tags",
       onRemove: () => setTagIds([]),
+    })
+  if (filters.sizeMin || filters.sizeMax)
+    badges.push({
+      key: "size",
+      label: `Tamanho: ${filters.sizeMin || "…"}–${filters.sizeMax || "…"}mm`,
+      onRemove: () => setRange("sizeMin", "sizeMax", "", ""),
     })
   if (filters.bridgeMin || filters.bridgeMax)
     badges.push({

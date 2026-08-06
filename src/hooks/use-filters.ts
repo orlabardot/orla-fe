@@ -10,6 +10,8 @@ export interface CatalogFilterState {
   categoryId: string
   brandId: string
   colorCode: string
+  sizeMin: string
+  sizeMax: string
   bridgeMin: string
   bridgeMax: string
   templeMin: string
@@ -24,6 +26,8 @@ const DEFAULT_STATE: CatalogFilterState = {
   categoryId: "",
   brandId: "",
   colorCode: "",
+  sizeMin: "",
+  sizeMax: "",
   bridgeMin: "",
   bridgeMax: "",
   templeMin: "",
@@ -45,6 +49,8 @@ export function useFilters() {
       categoryId: searchParams.get("categoryId") ?? DEFAULT_STATE.categoryId,
       brandId: searchParams.get("brandId") ?? DEFAULT_STATE.brandId,
       colorCode: searchParams.get("colorCode") ?? DEFAULT_STATE.colorCode,
+      sizeMin: searchParams.get("sizeMin") ?? DEFAULT_STATE.sizeMin,
+      sizeMax: searchParams.get("sizeMax") ?? DEFAULT_STATE.sizeMax,
       bridgeMin: searchParams.get("bridgeMin") ?? DEFAULT_STATE.bridgeMin,
       bridgeMax: searchParams.get("bridgeMax") ?? DEFAULT_STATE.bridgeMax,
       templeMin: searchParams.get("templeMin") ?? DEFAULT_STATE.templeMin,
@@ -90,8 +96,8 @@ export function useFilters() {
 
   const setRange = useCallback(
     (
-      minKey: "bridgeMin" | "templeMin",
-      maxKey: "bridgeMax" | "templeMax",
+      minKey: "sizeMin" | "bridgeMin" | "templeMin",
+      maxKey: "sizeMax" | "bridgeMax" | "templeMax",
       min: string,
       max: string
     ) => {
@@ -118,6 +124,7 @@ export function useFilters() {
     if (filters.categoryId) count++
     if (filters.brandId) count++
     if (filters.colorCode) count++
+    if (filters.sizeMin || filters.sizeMax) count++
     if (filters.bridgeMin || filters.bridgeMax) count++
     if (filters.templeMin || filters.templeMax) count++
     if (filters.tagIds.length) count++
@@ -133,6 +140,8 @@ export function useFilters() {
       categoryId: filters.categoryId || undefined,
       brandId: filters.brandId || undefined,
       colorCode: filters.colorCode || undefined,
+      sizeMin: filters.sizeMin ? Number(filters.sizeMin) : undefined,
+      sizeMax: filters.sizeMax ? Number(filters.sizeMax) : undefined,
       bridgeMin: filters.bridgeMin ? Number(filters.bridgeMin) : undefined,
       bridgeMax: filters.bridgeMax ? Number(filters.bridgeMax) : undefined,
       templeMin: filters.templeMin ? Number(filters.templeMin) : undefined,

@@ -116,6 +116,8 @@ export interface CatalogFilters extends PaginationParams {
   categoryId?: string
   brandId?: string
   colorCode?: string
+  sizeMin?: number
+  sizeMax?: number
   bridgeMin?: number
   bridgeMax?: number
   templeMin?: number

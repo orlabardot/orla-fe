@@ -194,6 +194,25 @@ export function FilterBarMobile({
             </div>
 
             <div className="space-y-2">
+              <Label>Tamanho da lente (mm)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  inputMode="decimal"
+                  placeholder="Mín"
+                  value={filters.sizeMin}
+                  onChange={(e) => setRange("sizeMin", "sizeMax", e.target.value, filters.sizeMax)}
+                />
+                <span className="text-text-muted">–</span>
+                <Input
+                  inputMode="decimal"
+                  placeholder="Máx"
+                  value={filters.sizeMax}
+                  onChange={(e) => setRange("sizeMin", "sizeMax", filters.sizeMin, e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label>Ponte (mm)</Label>
               <div className="flex items-center gap-2">
                 <Input
