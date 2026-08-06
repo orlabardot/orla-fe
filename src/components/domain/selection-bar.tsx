@@ -46,7 +46,7 @@ export function SelectionBar() {
               </div>
             ))}
             {extra > 0 && (
-              <div className="flex size-8 items-center justify-center rounded-sm border border-border bg-bg-elevated text-body-sm text-text-muted">
+              <div className="flex size-8 items-center justify-center rounded-sm border border-border bg-bg-elevated text-body-sm text-text-secondary">
                 +{extra}
               </div>
             )}
