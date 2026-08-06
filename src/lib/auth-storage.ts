@@ -3,8 +3,6 @@ import type { AuthUser } from "@/types/api"
 const TOKEN_KEY = "@otica:token"
 const USER_KEY = "@otica:user"
 const TENANT_SLUG_KEY = "@otica:tenant-slug"
-// Sobrevive ao logout — só serve para pré-preencher o campo de tenant no login
-const LAST_TENANT_SLUG_KEY = "@otica:last-tenant-slug"
 
 // Cache do último parse — useSyncExternalStore exige que getSnapshot
 // devolva a mesma referência entre chamadas quando o valor não mudou.
@@ -33,15 +31,10 @@ export const authStorage = {
     localStorage.setItem(TOKEN_KEY, token)
     localStorage.setItem(USER_KEY, JSON.stringify(user))
     localStorage.setItem(TENANT_SLUG_KEY, tenantSlug)
-    localStorage.setItem(LAST_TENANT_SLUG_KEY, tenantSlug)
   },
   clear() {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
     localStorage.removeItem(TENANT_SLUG_KEY)
-  },
-  getLastTenantSlug(): string | null {
-    if (typeof window === "undefined") return null
-    return localStorage.getItem(LAST_TENANT_SLUG_KEY)
   },
 }

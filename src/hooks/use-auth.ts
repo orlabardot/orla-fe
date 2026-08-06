@@ -14,12 +14,12 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: (payload: LoginPayload) => login(payload),
-    onSuccess: (data, variables) => {
-      authStorage.set(data.token, data.user, variables.tenantSlug)
+    onSuccess: (data) => {
+      authStorage.set(data.token, data.user, data.tenant.slug)
       router.push("/")
     },
     onError: () => {
-      toast.error("E-mail, senha ou ótica inválidos")
+      toast.error("E-mail ou senha inválidos")
     },
   })
 }

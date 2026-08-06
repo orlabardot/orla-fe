@@ -1,7 +1,7 @@
 // Tipos derivados do código real do backend (src/http/routes/*.ts em orla-be),
 // não da documentação — backEnd_context.md e backEnd_develop.md divergem entre si
-// e do código em alguns pontos (login não retorna tenant, listagem do catálogo
-// é /catalog e não /products, não existe filtro lensType, etc.)
+// e do código em alguns pontos (listagem do catálogo é /catalog e não /products,
+// não existe filtro lensType, etc.)
 
 // ─── Primitivos ────────────────────────────────────────────────────────────
 
@@ -27,9 +27,17 @@ export interface AuthUser {
   role: Role
 }
 
+export interface AuthTenant {
+  id: string
+  slug: string
+  name: string
+  logoUrl: string | null
+}
+
 export interface LoginResponse {
   token: string
   user: AuthUser
+  tenant: AuthTenant
 }
 
 // ─── Usuários (gestão via admin) ───────────────────────────────────────────

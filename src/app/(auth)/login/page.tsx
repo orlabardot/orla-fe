@@ -22,13 +22,8 @@ export default function LoginPage() {
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { tenantSlug: "", email: "", password: "" },
+    defaultValues: { email: "", password: "" },
   })
-
-  useEffect(() => {
-    const lastSlug = authStorage.getLastTenantSlug()
-    if (lastSlug) form.setValue("tenantSlug", lastSlug)
-  }, [form])
 
   useEffect(() => {
     const token = authStorage.getToken()
@@ -60,22 +55,6 @@ export default function LoginPage() {
           onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-5 rounded-lg border border-border bg-bg-surface p-6 shadow-card"
         >
-          <div className="space-y-2">
-            <Label htmlFor="tenantSlug">Ótica</Label>
-            <Input
-              id="tenantSlug"
-              placeholder="ex: demo"
-              autoComplete="organization"
-              autoCapitalize="off"
-              {...form.register("tenantSlug")}
-            />
-            {form.formState.errors.tenantSlug && (
-              <p className="text-body-sm text-danger">
-                {form.formState.errors.tenantSlug.message}
-              </p>
-            )}
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="email">E-mail</Label>
             <Input

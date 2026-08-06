@@ -8,14 +8,9 @@ export const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = authStorage.getToken()
-  const tenantSlug = authStorage.getTenantSlug()
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
-  }
-
-  if (tenantSlug && !config.headers["x-tenant-slug"]) {
-    config.headers["x-tenant-slug"] = tenantSlug
   }
 
   if (config.url?.includes("/pdf/generate")) {
