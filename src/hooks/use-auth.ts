@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { authStorage } from "@/lib/auth-storage"
+import { isTokenExpired } from "@/lib/jwt"
 import { login, logout, type LoginPayload } from "@/services/auth.service"
 import type { AuthUser } from "@/types/api"
 
@@ -60,4 +61,40 @@ export function useAuthUser(): AuthUser | null {
   }, [])
 
   return user
+}
+
+interface RequireAuthOptions {
+  /** Se definido, exige que o usuário logado tenha esse role. */
+  role?: AuthUser["role"]
+  /** Rota de destino quando o role não bate. Padrão: "/". */
+  redirectTo?: string
+}
+
+// Guarda de autenticação compartilhada pelos layouts protegidos: checa token
+// presente e não expirado (sem esperar uma chamada de API falhar com 401) e,
+// opcionalmente, o role do usuário.
+export function useRequireAuth(options: RequireAuthOptions = {}): boolean {
+  const router = useRouter()
+  const [authorized, setAuthorized] = useState(false)
+  const { role, redirectTo = "/" } = options
+
+  useEffect(() => {
+    const token = authStorage.getToken()
+
+    if (!token || isTokenExpired(token)) {
+      authStorage.clear()
+      router.replace("/login")
+      return
+    }
+
+    if (role && authStorage.getUser()?.role !== role) {
+      router.replace(redirectTo)
+      return
+    }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- guarda de auth: só corre uma vez no mount, lê localStorage (indisponível no SSR)
+    setAuthorized(true)
+  }, [router, role, redirectTo])
+
+  return authorized
 }

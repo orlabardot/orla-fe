@@ -1,26 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { authStorage } from "@/lib/auth-storage"
 import { AdminNav } from "@/components/layout/admin-nav"
+import { useRequireAuth } from "@/hooks/use-auth"
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
-  const [authorized, setAuthorized] = useState(false)
-
-  useEffect(() => {
-    if (authStorage.getUser()?.role === "admin") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- guarda de role: roda uma vez ao montar, lê localStorage
-      setAuthorized(true)
-    } else {
-      router.replace("/")
-    }
-  }, [router])
+  const authorized = useRequireAuth({ role: "admin" })
 
   if (!authorized) return null
 

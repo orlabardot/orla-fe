@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Eye, EyeOff } from "lucide-react"
@@ -11,9 +12,12 @@ import { Separator } from "@/components/ui/separator"
 import { loginSchema, type LoginFormValues } from "@/schemas/auth.schema"
 import { useLogin } from "@/hooks/use-auth"
 import { authStorage } from "@/lib/auth-storage"
+import { isTokenExpired } from "@/lib/jwt"
 
 export default function LoginPage() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
+  const [checkingSession, setCheckingSession] = useState(true)
   const login = useLogin()
 
   const form = useForm<LoginFormValues>({
@@ -26,9 +30,21 @@ export default function LoginPage() {
     if (lastSlug) form.setValue("tenantSlug", lastSlug)
   }, [form])
 
+  useEffect(() => {
+    const token = authStorage.getToken()
+    if (token && !isTokenExpired(token)) {
+      router.replace("/")
+      return
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- guarda de sessão: só corre uma vez no mount, lê localStorage (indisponível no SSR)
+    setCheckingSession(false)
+  }, [router])
+
   function onSubmit(values: LoginFormValues) {
     login.mutate(values)
   }
+
+  if (checkingSession) return null
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
