@@ -1,7 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
-import { ImageOff } from "lucide-react"
+import { Eye, ImageOff } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -11,9 +14,13 @@ interface VariantCardProps {
   variant: CatalogItem
   selected: boolean
   onToggle: (variant: CatalogItem) => void
+  onViewDetails: (variant: CatalogItem) => void
 }
 
-export function VariantCard({ variant, selected, onToggle }: VariantCardProps) {
+export function VariantCard({ variant, selected, onToggle, onViewDetails }: VariantCardProps) {
+  const [hovered, setHovered] = useState(false)
+  const previewUrl = hovered && variant.imageUrls[1] ? variant.imageUrls[1] : variant.primaryImageUrl
+
   return (
     <div
       role="button"
@@ -25,6 +32,10 @@ export function VariantCard({ variant, selected, onToggle }: VariantCardProps) {
           onToggle(variant)
         }
       }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
       className={cn(
         "group relative cursor-pointer overflow-hidden rounded-lg border bg-bg-surface transition-all",
         selected
@@ -44,10 +55,24 @@ export function VariantCard({ variant, selected, onToggle }: VariantCardProps) {
         />
       </div>
 
+      <div className="absolute top-2 right-2 z-10 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          onClick={(e) => {
+            e.stopPropagation()
+            onViewDetails(variant)
+          }}
+          aria-label={`Ver detalhes de ${variant.skuVariant}`}
+        >
+          <Eye className="size-3.5" />
+        </Button>
+      </div>
+
       <div className="relative aspect-square bg-bg-elevated">
-        {variant.primaryImageUrl ? (
+        {previewUrl ? (
           <Image
-            src={variant.primaryImageUrl}
+            src={previewUrl}
             alt={
               variant.colorLabel
                 ? `${variant.skuVariant} — ${variant.colorLabel}`
@@ -64,13 +89,23 @@ export function VariantCard({ variant, selected, onToggle }: VariantCardProps) {
         )}
       </div>
 
-      <div className="space-y-0.5 p-3">
+      <div className="space-y-1.5 p-3">
+        {(variant.frameType || variant.categoryName) && (
+          <div className="flex flex-wrap gap-1">
+            {variant.frameType && (
+              <Badge variant="outline" className="capitalize">
+                {variant.frameType}
+              </Badge>
+            )}
+            {variant.categoryName && <Badge variant="outline">{variant.categoryName}</Badge>}
+          </div>
+        )}
         <p className="truncate font-mono text-sku text-foreground">{variant.skuVariant}</p>
         {variant.colorLabel && (
           <p className="truncate text-body-sm text-text-secondary">{variant.colorLabel}</p>
         )}
         {variant.brandName && (
-          <p className="truncate text-body-sm text-text-muted">{variant.brandName}</p>
+          <p className="truncate text-body-sm text-text-secondary">{variant.brandName}</p>
         )}
       </div>
     </div>

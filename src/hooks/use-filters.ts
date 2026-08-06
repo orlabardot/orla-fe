@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import type { CatalogFilters, FrameType } from "@/types/api"
+import type { CatalogFilters, CatalogSort, FrameType } from "@/types/api"
 
 export interface CatalogFilterState {
   q: string
@@ -17,6 +17,7 @@ export interface CatalogFilterState {
   templeMin: string
   templeMax: string
   tagIds: string[]
+  sort: CatalogSort
   page: number
 }
 
@@ -33,6 +34,7 @@ const DEFAULT_STATE: CatalogFilterState = {
   templeMin: "",
   templeMax: "",
   tagIds: [],
+  sort: "name_asc",
   page: 1,
 }
 
@@ -56,6 +58,7 @@ export function useFilters() {
       templeMin: searchParams.get("templeMin") ?? DEFAULT_STATE.templeMin,
       templeMax: searchParams.get("templeMax") ?? DEFAULT_STATE.templeMax,
       tagIds: tagIdsParam ? tagIdsParam.split(",").filter(Boolean) : [],
+      sort: (searchParams.get("sort") as CatalogSort | null) ?? DEFAULT_STATE.sort,
       page: Number(searchParams.get("page")) || DEFAULT_STATE.page,
     }
   }, [searchParams])
@@ -147,6 +150,7 @@ export function useFilters() {
       templeMin: filters.templeMin ? Number(filters.templeMin) : undefined,
       templeMax: filters.templeMax ? Number(filters.templeMax) : undefined,
       tagIds: filters.tagIds.length ? filters.tagIds.join(",") : undefined,
+      sort: filters.sort,
     }),
     [filters]
   )

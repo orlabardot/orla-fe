@@ -75,7 +75,7 @@ export function PDFModal({ open, onOpenChange, items, onSuccess }: PDFModalProps
             </div>
           ))}
           {extra > 0 && (
-            <div className="flex size-12 items-center justify-center rounded-md border border-border bg-bg-elevated text-body-sm text-text-muted">
+            <div className="flex size-12 items-center justify-center rounded-md border border-border bg-bg-elevated text-body-sm text-text-secondary">
               +{extra}
             </div>
           )}
