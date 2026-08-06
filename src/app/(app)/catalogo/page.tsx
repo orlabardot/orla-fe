@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -12,6 +13,8 @@ import { FilterBarMobile } from "@/components/domain/filter-bar-mobile"
 import { VariantCard, VariantCardSkeleton } from "@/components/domain/variant-card"
 import { EmptyState } from "@/components/domain/empty-state"
 import { SelectionBar } from "@/components/domain/selection-bar"
+import { ProductDetailDialog } from "@/components/domain/product-detail-dialog"
+import type { CatalogItem } from "@/types/api"
 
 const GRID_COLUMN_OPTIONS = [4, 5, 6] as const
 
@@ -25,6 +28,11 @@ export default function CatalogoPage() {
   const toggle = useSelectionStore((state) => state.toggle)
   const gridColumns = useUIStore((state) => state.gridColumns)
   const setGridColumns = useUIStore((state) => state.setGridColumns)
+
+  const [detailTarget, setDetailTarget] = useState<{
+    productId: string
+    variantId: string
+  } | null>(null)
 
   const catalog = useQuery({
     queryKey: ["catalog", apiFilters],
@@ -86,6 +94,9 @@ export default function CatalogoPage() {
               variant={variant}
               selected={selected.has(variant.variantId)}
               onToggle={toggle}
+              onViewDetails={(v: CatalogItem) =>
+                setDetailTarget({ productId: v.productId, variantId: v.variantId })
+              }
             />
           ))}
         </div>
@@ -116,6 +127,15 @@ export default function CatalogoPage() {
       </div>
 
       <SelectionBar />
+
+      <ProductDetailDialog
+        productId={detailTarget?.productId ?? null}
+        initialVariantId={detailTarget?.variantId}
+        open={!!detailTarget}
+        onOpenChange={(open) => {
+          if (!open) setDetailTarget(null)
+        }}
+      />
     </div>
   )
 }

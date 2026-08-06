@@ -2,8 +2,9 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { ImageOff } from "lucide-react"
+import { Eye, ImageOff } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -13,9 +14,10 @@ interface VariantCardProps {
   variant: CatalogItem
   selected: boolean
   onToggle: (variant: CatalogItem) => void
+  onViewDetails: (variant: CatalogItem) => void
 }
 
-export function VariantCard({ variant, selected, onToggle }: VariantCardProps) {
+export function VariantCard({ variant, selected, onToggle, onViewDetails }: VariantCardProps) {
   const [hovered, setHovered] = useState(false)
   const previewUrl = hovered && variant.imageUrls[1] ? variant.imageUrls[1] : variant.primaryImageUrl
 
@@ -51,6 +53,20 @@ export function VariantCard({ variant, selected, onToggle }: VariantCardProps) {
           onClick={(e) => e.stopPropagation()}
           aria-label={`Selecionar ${variant.skuVariant}`}
         />
+      </div>
+
+      <div className="absolute top-2 right-2 z-10 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          onClick={(e) => {
+            e.stopPropagation()
+            onViewDetails(variant)
+          }}
+          aria-label={`Ver detalhes de ${variant.skuVariant}`}
+        >
+          <Eye className="size-3.5" />
+        </Button>
       </div>
 
       <div className="relative aspect-square bg-bg-elevated">
