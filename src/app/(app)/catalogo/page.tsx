@@ -51,6 +51,13 @@ export default function CatalogoPage() {
     queryKey: ["catalog", apiFilters],
     queryFn: () => getCatalog(apiFilters),
     staleTime: 60_000,
+    // Com o networkMode padrão ("online"), o React Query PAUSA a query
+    // (fetchStatus: "paused") em vez de marcar isError quando o navegador
+    // se reporta offline — ou seja, o estado de erro abaixo nunca apareceria
+    // justamente no cenário mais comum de falha (sem internet). "always"
+    // faz a busca (e o retry) rodar de qualquer forma, garantindo que uma
+    // falha real vire isError e mostre a ação de "tentar novamente".
+    networkMode: "always",
   })
 
   const desktopColsClass =
@@ -110,7 +117,16 @@ export default function CatalogoPage() {
           </div>
         </div>
 
-        {!catalog.isLoading && catalog.data?.data.length === 0 && (
+        {catalog.isError && (
+          <EmptyState
+            title="Não foi possível carregar o catálogo"
+            description="Verifique sua conexão e tente novamente."
+            actionLabel="Tentar novamente"
+            onAction={() => catalog.refetch()}
+          />
+        )}
+
+        {!catalog.isLoading && !catalog.isError && catalog.data?.data.length === 0 && (
           <EmptyState actionLabel="Limpar filtros" onAction={clearFilters} />
         )}
 
