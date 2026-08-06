@@ -93,12 +93,16 @@ export interface PaginationParams {
 
 // ─── Catálogo (GET /catalog — listagem plana de variantes) ────────────────
 
+export type CatalogSort = "name_asc" | "name_desc" | "newest"
+
 export interface CatalogItem {
   variantId: string
+  productId: string
   skuVariant: string
   colorCode: string | null
   colorLabel: string | null
   primaryImageUrl: string | null
+  imageUrls: string[]
   productName: string
   productSku: string
   frameType: FrameType | null
@@ -123,6 +127,7 @@ export interface CatalogFilters extends PaginationParams {
   templeMin?: number
   templeMax?: number
   tagIds?: string // CSV: "uuid1,uuid2"
+  sort?: CatalogSort
 }
 
 // ─── Products (CRUD admin) ─────────────────────────────────────────────────
