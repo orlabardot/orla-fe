@@ -44,6 +44,7 @@
   --color-danger-text: #fca5a5;
 
   --color-background: var(--bg-page);
+  --color-bg-surface: var(--bg-surface);
   --color-foreground: var(--text-primary);
   --color-border: var(--border-subtle);
   --color-ring: var(--ring);

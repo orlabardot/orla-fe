@@ -16,7 +16,7 @@ export function AdminNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="flex gap-5 border-b border-border">
+    <nav className="flex gap-5 overflow-x-auto border-b border-border">
       {links.map((link) => {
         const active = pathname.startsWith(link.href)
         return (
@@ -24,7 +24,7 @@ export function AdminNav() {
             key={link.href}
             href={link.href}
             className={cn(
-              "border-b-2 pb-3 text-ui-md transition-colors",
+              "shrink-0 border-b-2 pb-3 text-ui-md whitespace-nowrap transition-colors",
               active
                 ? "border-brand text-foreground"
                 : "border-transparent text-text-muted hover:text-text-secondary"
