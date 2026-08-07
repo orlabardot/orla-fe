@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, LibraryBig, Settings } from "lucide-react"
+import { ClipboardList, LayoutDashboard, LibraryBig, Settings } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -16,6 +16,7 @@ import { useUIStore } from "@/stores/ui.store"
 const navLinks = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/catalogo", label: "Catálogo", icon: LibraryBig },
+  { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
 ]
 
 export function SidebarSheet() {
