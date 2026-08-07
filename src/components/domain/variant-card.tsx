@@ -2,12 +2,14 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Eye, ImageOff } from "lucide-react"
+import { Eye, ImageOff, ShoppingCart } from "lucide-react"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { useCartStore } from "@/stores/cart.store"
 import type { CatalogItem } from "@/types/api"
 
 interface VariantCardProps {
@@ -19,7 +21,20 @@ interface VariantCardProps {
 
 export function VariantCard({ variant, selected, onToggle, onViewDetails }: VariantCardProps) {
   const [hovered, setHovered] = useState(false)
+  const addToCart = useCartStore((state) => state.addItem)
   const previewUrl = hovered && variant.imageUrls[1] ? variant.imageUrls[1] : variant.primaryImageUrl
+
+  function handleAddToCart(e: React.MouseEvent) {
+    e.stopPropagation()
+    addToCart({
+      variantId: variant.variantId,
+      skuVariant: variant.skuVariant,
+      productName: variant.productName,
+      colorLabel: variant.colorLabel,
+      primaryImageUrl: variant.primaryImageUrl,
+    })
+    toast.success(`${variant.skuVariant} adicionado ao carrinho`)
+  }
 
   return (
     <div
@@ -55,7 +70,7 @@ export function VariantCard({ variant, selected, onToggle, onViewDetails }: Vari
         />
       </div>
 
-      <div className="absolute top-2 right-2 z-10 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+      <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
         <Button
           variant="secondary"
           size="icon-sm"
@@ -66,6 +81,14 @@ export function VariantCard({ variant, selected, onToggle, onViewDetails }: Vari
           aria-label={`Ver detalhes de ${variant.skuVariant}`}
         >
           <Eye className="size-3.5" />
+        </Button>
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          onClick={handleAddToCart}
+          aria-label={`Adicionar ${variant.skuVariant} ao carrinho`}
+        >
+          <ShoppingCart className="size-3.5" />
         </Button>
       </div>
 

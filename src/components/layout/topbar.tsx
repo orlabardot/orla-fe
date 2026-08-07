@@ -17,10 +17,12 @@ import {
 import { cn } from "@/lib/utils"
 import { useAuthUser, useLogout } from "@/hooks/use-auth"
 import { useUIStore } from "@/stores/ui.store"
+import { CartSheet } from "@/components/domain/cart-sheet"
 
 const navLinks = [
   { href: "/", label: "Dashboard" },
   { href: "/catalogo", label: "Catálogo" },
+  { href: "/pedidos", label: "Pedidos" },
 ]
 
 const adminNavLink = { href: "/admin/produtos", label: "Admin" }
@@ -92,23 +94,27 @@ export function Topbar() {
         </nav>
       </div>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger className="outline-none">
-          <Avatar>
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>
-              <p className="text-foreground">{user?.name ?? "—"}</p>
-              <p className="text-body-sm font-normal text-text-muted">{user?.email}</p>
-            </DropdownMenuLabel>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => logout.mutate()}>Sair</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex items-center gap-2">
+        <CartSheet />
+
+        <DropdownMenu>
+          <DropdownMenuTrigger className="outline-none">
+            <Avatar>
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>
+                <p className="text-foreground">{user?.name ?? "—"}</p>
+                <p className="text-body-sm font-normal text-text-muted">{user?.email}</p>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => logout.mutate()}>Sair</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </header>
   )
 }
