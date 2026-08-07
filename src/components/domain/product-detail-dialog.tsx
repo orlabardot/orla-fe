@@ -3,7 +3,8 @@
 import { useState } from "react"
 import Image from "next/image"
 import { useQuery } from "@tanstack/react-query"
-import { ImageOff } from "lucide-react"
+import { toast } from "sonner"
+import { ChevronLeft, ChevronRight, ImageOff, Minus, Plus, ShoppingCart } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { getProduct } from "@/services/products.service"
 import { useSelectionStore } from "@/stores/selection.store"
+import { useCartStore } from "@/stores/cart.store"
 import type { ProductVariant } from "@/types/api"
 
 interface ProductDetailDialogProps {
@@ -38,6 +40,7 @@ export function ProductDetailDialog({
 }: ProductDetailDialogProps) {
   const selected = useSelectionStore((state) => state.selected)
   const toggle = useSelectionStore((state) => state.toggle)
+  const addToCart = useCartStore((state) => state.addItem)
 
   const product = useQuery({
     queryKey: ["product", productId],
@@ -47,6 +50,7 @@ export function ProductDetailDialog({
 
   const [activeVariantId, setActiveVariantId] = useState<string | undefined>(initialVariantId)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [quantity, setQuantity] = useState(1)
 
   // Ajusta o estado local durante a renderização (sem useEffect) quando o
   // alvo do modal muda — padrão recomendado pelo React pra "resetar estado
@@ -57,6 +61,7 @@ export function ProductDetailDialog({
     setResolvedTargetKey(targetKey)
     setActiveVariantId(initialVariantId)
     setActiveImageIndex(0)
+    setQuantity(1)
   }
 
   const activeVariant =
@@ -67,6 +72,23 @@ export function ProductDetailDialog({
   function selectVariant(variant: ProductVariant) {
     setActiveVariantId(variant.id)
     setActiveImageIndex(0)
+    setQuantity(1)
+  }
+
+  function handleAddToCart() {
+    if (!activeVariant) return
+    addToCart(
+      {
+        variantId: activeVariant.id,
+        skuVariant: activeVariant.skuVariant,
+        productName: product.data!.name,
+        colorLabel: activeVariant.colorLabel,
+        primaryImageUrl: variantPrimaryImageUrl(activeVariant),
+      },
+      quantity
+    )
+    toast.success(`${activeVariant.skuVariant} adicionado ao carrinho`)
+    setQuantity(1)
   }
 
   return (
@@ -110,6 +132,31 @@ export function ProductDetailDialog({
                     <ImageOff className="size-8" />
                   </div>
                 )}
+                {images.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActiveImageIndex((i) => (i - 1 + images.length) % images.length)
+                      }
+                      className="absolute top-1/2 left-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-bg-page/80 text-foreground transition-colors hover:bg-bg-page focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                      aria-label="Foto anterior"
+                    >
+                      <ChevronLeft className="size-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveImageIndex((i) => (i + 1) % images.length)}
+                      className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-bg-page/80 text-foreground transition-colors hover:bg-bg-page focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+                      aria-label="Próxima foto"
+                    >
+                      <ChevronRight className="size-5" />
+                    </button>
+                    <span className="absolute right-2 bottom-2 rounded-full bg-bg-page/80 px-2 py-0.5 text-xs text-foreground">
+                      {activeImageIndex + 1}/{images.length}
+                    </span>
+                  </>
+                )}
               </div>
               {images.length > 1 && (
                 <div className="flex flex-wrap gap-2">
@@ -147,6 +194,33 @@ export function ProductDetailDialog({
                 </DialogTitle>
                 <p className="font-mono text-sku text-text-secondary">{activeVariant.skuVariant}</p>
               </DialogHeader>
+
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 rounded-md border border-border p-0.5">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    disabled={quantity <= 1}
+                    aria-label="Diminuir quantidade"
+                  >
+                    <Minus className="size-3" />
+                  </Button>
+                  <span className="w-6 text-center text-body-sm text-foreground">{quantity}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setQuantity((q) => q + 1)}
+                    aria-label="Aumentar quantidade"
+                  >
+                    <Plus className="size-3" />
+                  </Button>
+                </div>
+                <Button className="flex-1" onClick={handleAddToCart}>
+                  <ShoppingCart className="size-4" />
+                  Adicionar ao carrinho
+                </Button>
+              </div>
 
               <div className="flex flex-wrap gap-1.5">
                 {product.data.frameType && (
