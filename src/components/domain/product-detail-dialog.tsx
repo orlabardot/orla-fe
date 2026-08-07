@@ -17,7 +17,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { getProduct } from "@/services/products.service"
-import { useSelectionStore } from "@/stores/selection.store"
 import { useCartStore } from "@/stores/cart.store"
 import type { ProductVariant } from "@/types/api"
 
@@ -38,8 +37,6 @@ export function ProductDetailDialog({
   open,
   onOpenChange,
 }: ProductDetailDialogProps) {
-  const selected = useSelectionStore((state) => state.selected)
-  const toggle = useSelectionStore((state) => state.toggle)
   const addToCart = useCartStore((state) => state.addItem)
 
   const product = useQuery({
@@ -51,6 +48,9 @@ export function ProductDetailDialog({
   const [activeVariantId, setActiveVariantId] = useState<string | undefined>(initialVariantId)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [quantity, setQuantity] = useState(1)
+  // Cores extras (além da que está em exibição) marcadas pra ir junto no
+  // "Adicionar ao carrinho", todas com a mesma quantidade escolhida acima.
+  const [checkedVariantIds, setCheckedVariantIds] = useState<Set<string>>(new Set())
 
   // Ajusta o estado local durante a renderização (sem useEffect) quando o
   // alvo do modal muda — padrão recomendado pelo React pra "resetar estado
@@ -62,6 +62,7 @@ export function ProductDetailDialog({
     setActiveVariantId(initialVariantId)
     setActiveImageIndex(0)
     setQuantity(1)
+    setCheckedVariantIds(new Set())
   }
 
   const activeVariant =
@@ -75,20 +76,48 @@ export function ProductDetailDialog({
     setQuantity(1)
   }
 
+  function toggleChecked(variantId: string) {
+    setCheckedVariantIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(variantId)) {
+        next.delete(variantId)
+      } else {
+        next.add(variantId)
+      }
+      return next
+    })
+  }
+
   function handleAddToCart() {
-    if (!activeVariant) return
-    addToCart(
-      {
-        variantId: activeVariant.id,
-        skuVariant: activeVariant.skuVariant,
-        productName: product.data!.name,
-        colorLabel: activeVariant.colorLabel,
-        primaryImageUrl: variantPrimaryImageUrl(activeVariant),
-      },
-      quantity
+    if (!activeVariant || !product.data) return
+
+    const variantsToAdd = [
+      activeVariant,
+      ...product.data.variants.filter(
+        (v) => v.id !== activeVariant.id && checkedVariantIds.has(v.id)
+      ),
+    ]
+
+    for (const variant of variantsToAdd) {
+      addToCart(
+        {
+          variantId: variant.id,
+          skuVariant: variant.skuVariant,
+          productName: product.data.name,
+          colorLabel: variant.colorLabel,
+          primaryImageUrl: variantPrimaryImageUrl(variant),
+        },
+        quantity
+      )
+    }
+
+    toast.success(
+      variantsToAdd.length > 1
+        ? `${variantsToAdd.length} variantes adicionadas ao carrinho`
+        : `${activeVariant.skuVariant} adicionado ao carrinho`
     )
-    toast.success(`${activeVariant.skuVariant} adicionado ao carrinho`)
     setQuantity(1)
+    setCheckedVariantIds(new Set())
   }
 
   return (
@@ -218,7 +247,9 @@ export function ProductDetailDialog({
                 </div>
                 <Button className="flex-1" onClick={handleAddToCart}>
                   <ShoppingCart className="size-4" />
-                  Adicionar ao carrinho
+                  {checkedVariantIds.size > 0
+                    ? `Adicionar ${checkedVariantIds.size + 1} variantes`
+                    : "Adicionar ao carrinho"}
                 </Button>
               </div>
 
@@ -273,47 +304,47 @@ export function ProductDetailDialog({
 
               {product.data.variants.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-body-sm text-text-secondary">Cores disponíveis</p>
-                  <ul className="flex flex-col gap-1.5">
+                  <p className="text-body-sm text-text-secondary">
+                    Cores disponíveis
+                    <span className="ml-1 text-text-muted">
+                      (marque outras pra adicionar junto ao carrinho)
+                    </span>
+                  </p>
+                  <div className="flex flex-wrap gap-2">
                     {product.data.variants.map((variant) => {
-                      const isSelected = selected.has(variant.id)
                       const isActive = variant.id === activeVariant.id
+                      const isChecked = isActive || checkedVariantIds.has(variant.id)
                       return (
-                        <li key={variant.id}>
-                          <div
-                            className={cn(
-                              "flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-colors",
+                        <div
+                          key={variant.id}
+                          className={cn(
+                            "flex items-center gap-1.5 rounded-md border px-2 py-1 transition-colors",
+                            isActive
+                              ? "border-brand bg-brand-subtle"
+                              : "border-border hover:border-brand/40"
+                          )}
+                        >
+                          <Checkbox
+                            checked={isChecked}
+                            disabled={isActive}
+                            onCheckedChange={() => toggleChecked(variant.id)}
+                            aria-label={
                               isActive
-                                ? "border-brand bg-brand-subtle"
-                                : "border-border hover:border-brand/40"
-                            )}
+                                ? `${variant.skuVariant} já está sendo exibida e sempre vai pro carrinho`
+                                : `Incluir ${variant.colorLabel ?? variant.skuVariant} no carrinho`
+                            }
+                          />
+                          <button
+                            type="button"
+                            onClick={() => selectVariant(variant)}
+                            className="text-body-sm text-foreground focus-visible:outline-none"
                           >
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() =>
-                                toggle({
-                                  variantId: variant.id,
-                                  skuVariant: variant.skuVariant,
-                                  primaryImageUrl: variantPrimaryImageUrl(variant),
-                                })
-                              }
-                              aria-label={`Selecionar ${variant.skuVariant}`}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => selectVariant(variant)}
-                              className="flex flex-1 items-center justify-between text-left text-body-sm text-foreground focus-visible:outline-none"
-                            >
-                              <span>{variant.colorLabel ?? variant.skuVariant}</span>
-                              {!isActive && (
-                                <span className="text-text-secondary">Ver</span>
-                              )}
-                            </button>
-                          </div>
-                        </li>
+                            {variant.colorCode ?? variant.colorLabel ?? variant.skuVariant}
+                          </button>
+                        </div>
                       )
                     })}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
