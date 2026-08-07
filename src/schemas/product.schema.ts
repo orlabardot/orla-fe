@@ -59,6 +59,7 @@ export function productFormToCreateBody(values: ProductFormValues): CreateProduc
 
 export function productFormToUpdateBody(values: ProductFormValues): UpdateProductBody {
   return {
+    sku: values.sku,
     name: values.name,
     description: values.description || undefined,
     categoryId: values.categoryId || null,
