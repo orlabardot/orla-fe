@@ -191,6 +191,7 @@ function RangePopover({
   max: string
   onCommit: (min: string, max: string) => void
 }) {
+  const [open, setOpen] = useState(false)
   const [value, setValue] = useState<number[]>([
     min ? Number(min) : bounds[0],
     max ? Number(max) : bounds[1],
@@ -199,15 +200,21 @@ function RangePopover({
 
   return (
     <Popover
-      onOpenChange={(open) => {
-        if (!open) onCommit(String(value[0]), String(value[1]))
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (nextOpen) {
+          // Reabrir sempre parte do que já está aplicado, não do último
+          // arraste não confirmado.
+          setValue([min ? Number(min) : bounds[0], max ? Number(max) : bounds[1]])
+        }
       }}
     >
       <PopoverTrigger
         render={<Button variant={active ? "secondary" : "outline"} size="sm" />}
       >
         {label}
-        {active ? ` ${value[0]}–${value[1]}mm` : ""}
+        {active ? ` ${min || bounds[0]}–${max || bounds[1]}mm` : ""}
       </PopoverTrigger>
       <PopoverContent className="w-64">
         <p className="text-body-sm text-text-secondary">
@@ -221,6 +228,29 @@ function RangePopover({
           value={value}
           onValueChange={(next) => setValue(next as number[])}
         />
+        <div className="mt-4 flex justify-end gap-2">
+          {active && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onCommit("", "")
+                setOpen(false)
+              }}
+            >
+              Limpar
+            </Button>
+          )}
+          <Button
+            size="sm"
+            onClick={() => {
+              onCommit(String(value[0]), String(value[1]))
+              setOpen(false)
+            }}
+          >
+            Aplicar
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   )
