@@ -213,6 +213,10 @@ export interface CreateVariantBody {
   colorLabel?: string
 }
 
+export interface BulkCreateVariantsBody {
+  variants: CreateVariantBody[]
+}
+
 export interface UpdateVariantBody {
   colorLabel?: string
   isActive?: boolean

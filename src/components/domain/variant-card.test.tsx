@@ -31,6 +31,13 @@ describe("VariantCard", () => {
     expect(screen.getByText("Ray-Ban")).toBeInTheDocument()
   })
 
+  it("usa o código da cor quando não há nome da cor cadastrado", () => {
+    const variant = { ...baseVariant, colorLabel: null }
+    render(<VariantCard variant={variant} selected={false} onToggle={vi.fn()} onViewDetails={vi.fn()} />)
+
+    expect(screen.getByText("C2")).toBeInTheDocument()
+  })
+
   it("renderiza badges de tipo e categoria quando presentes", () => {
     render(<VariantCard variant={baseVariant} selected={false} onToggle={vi.fn()} onViewDetails={vi.fn()} />)
 

@@ -130,8 +130,10 @@ export function VariantCard({ variant, selected, onToggle, onViewDetails }: Vari
           </div>
         )}
         <p className="truncate font-mono text-sku text-foreground">{variant.skuVariant}</p>
-        {variant.colorLabel && (
-          <p className="truncate text-body-sm text-text-secondary">{variant.colorLabel}</p>
+        {(variant.colorLabel || variant.colorCode) && (
+          <p className="truncate text-body-sm text-text-secondary">
+            {variant.colorLabel || variant.colorCode}
+          </p>
         )}
         {variant.brandName && (
           <p className="truncate text-body-sm text-text-secondary">{variant.brandName}</p>

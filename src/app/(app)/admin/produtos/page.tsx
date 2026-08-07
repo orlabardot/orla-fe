@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
-import { MoreHorizontal, Plus } from "lucide-react"
+import { Layers, MoreHorizontal, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -135,7 +135,7 @@ export default function ProdutosPage() {
               <TableHead>Nome</TableHead>
               <TableHead>Marca</TableHead>
               <TableHead>Variantes</TableHead>
-              <TableHead className="w-16" />
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -169,25 +169,28 @@ export default function ProdutosPage() {
                   {product.variants.length}
                 </TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
-                      <MoreHorizontal className="size-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => router.push(`/admin/produtos/${product.id}/editar`)}
-                      >
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          router.push(`/admin/produtos/${product.id}/variantes`)
-                        }
-                      >
-                        Gerenciar variantes
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/admin/produtos/${product.id}/variantes`)}
+                    >
+                      <Layers className="size-4" />
+                      Gerenciar variantes
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+                        <MoreHorizontal className="size-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => router.push(`/admin/produtos/${product.id}/editar`)}
+                        >
+                          Editar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
