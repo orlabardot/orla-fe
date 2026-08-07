@@ -15,7 +15,7 @@ interface CartState {
   // (localStorage). O pedido em si, depois de finalizado, vai pro banco
   // (ver src/services/orders.service.ts), não fica só aqui.
   items: Record<string, CartItem>
-  addItem: (item: Omit<CartItem, "quantity">) => void
+  addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void
   removeItem: (variantId: string) => void
   setQuantity: (variantId: string, quantity: number) => void
   clear: () => void
@@ -29,13 +29,17 @@ export const useCartStore = create<CartState>()(
   persist(
     (set) => ({
       items: {},
-      addItem: (item) =>
+      addItem: (item, quantity = 1) =>
         set((state) => {
           const existing = state.items[item.variantId]
+          const addedQuantity = Math.max(1, Math.floor(quantity))
           return {
             items: {
               ...state.items,
-              [item.variantId]: { ...item, quantity: (existing?.quantity ?? 0) + 1 },
+              [item.variantId]: {
+                ...item,
+                quantity: (existing?.quantity ?? 0) + addedQuantity,
+              },
             },
           }
         }),
