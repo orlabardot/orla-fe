@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { authStorage } from "@/lib/auth-storage"
 import { isTokenExpired } from "@/lib/jwt"
 import { login, logout, type LoginPayload } from "@/services/auth.service"
-import type { AuthUser } from "@/types/api"
+import type { AuthTenant, AuthUser } from "@/types/api"
 
 export function useLogin() {
   const router = useRouter()
@@ -15,7 +15,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: (payload: LoginPayload) => login(payload),
     onSuccess: (data) => {
-      authStorage.set(data.token, data.user, data.tenant.slug)
+      authStorage.set(data.token, data.user, data.tenant)
       router.push("/")
     },
     onError: () => {
@@ -61,6 +61,17 @@ export function useAuthUser(): AuthUser | null {
   }, [])
 
   return user
+}
+
+export function useAuthTenant(): AuthTenant | null {
+  const [tenant, setTenant] = useState<AuthTenant | null>(null)
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTenant(authStorage.getTenant())
+  }, [])
+
+  return tenant
 }
 
 interface RequireAuthOptions {

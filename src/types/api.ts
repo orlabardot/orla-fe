@@ -32,6 +32,7 @@ export interface AuthTenant {
   slug: string
   name: string
   logoUrl: string | null
+  whatsappPhone: string | null
 }
 
 export interface LoginResponse {
@@ -260,4 +261,44 @@ export interface Tag {
 export interface GeneratePdfBody {
   variantIds: string[]
   clientName?: string
+}
+
+// ─── Orders (Pedidos) ───────────────────────────────────────────────────────
+
+export type OrderStatus = "pendente" | "atendido"
+
+export interface OrderItem {
+  id: string
+  orderId: string
+  variantId: string | null
+  skuVariant: string
+  productName: string
+  colorLabel: string | null
+  quantity: number
+}
+
+export interface Order {
+  id: string
+  tenantId: string
+  userId: string
+  cnpj: string
+  contactPhone: string
+  status: OrderStatus
+  createdAt: string
+  items: OrderItem[]
+  user?: { id: string; name: string; email: string }
+}
+
+export interface CreateOrderBody {
+  cnpj: string
+  contactPhone: string
+  items: { variantId: string; quantity: number }[]
+}
+
+export interface TenantSettings {
+  id: string
+  name: string
+  slug: string
+  logoUrl: string | null
+  whatsappPhone: string | null
 }
