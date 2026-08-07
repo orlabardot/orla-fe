@@ -22,7 +22,8 @@ interface VariantCardProps {
 export function VariantCard({ variant, selected, onToggle, onViewDetails }: VariantCardProps) {
   const [hovered, setHovered] = useState(false)
   const addToCart = useCartStore((state) => state.addItem)
-  const previewUrl = hovered && variant.imageUrls[1] ? variant.imageUrls[1] : variant.primaryImageUrl
+  const secondImageUrl = variant.imageUrls?.[1]
+  const previewUrl = hovered && secondImageUrl ? secondImageUrl : variant.primaryImageUrl
 
   function handleAddToCart(e: React.MouseEvent) {
     e.stopPropagation()
@@ -71,17 +72,22 @@ export function VariantCard({ variant, selected, onToggle, onViewDetails }: Vari
       </div>
 
       <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          onClick={(e) => {
-            e.stopPropagation()
-            onViewDetails(variant)
-          }}
-          aria-label={`Ver detalhes de ${variant.skuVariant}`}
-        >
-          <Eye className="size-3.5" />
-        </Button>
+        {/* Sem productId (backend em produção ainda sem esse campo em /catalog),
+            não tem como abrir o modal de detalhe — omite o botão em vez de
+            abrir um modal vazio. */}
+        {variant.productId && (
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              onViewDetails(variant)
+            }}
+            aria-label={`Ver detalhes de ${variant.skuVariant}`}
+          >
+            <Eye className="size-3.5" />
+          </Button>
+        )}
         <Button
           variant="secondary"
           size="icon-sm"
