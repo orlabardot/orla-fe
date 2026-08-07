@@ -191,6 +191,7 @@ export interface CreateProductBody {
 }
 
 export interface UpdateProductBody {
+  sku?: string
   name?: string
   description?: string
   categoryId?: string | null
