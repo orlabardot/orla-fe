@@ -4,10 +4,11 @@ import { useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useForm } from "react-hook-form"
+import { useFieldArray, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import { ArrowLeft, MoreHorizontal, Plus, Star, Trash2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -38,15 +39,17 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { getApiErrorMessage } from "@/lib/api-error"
 import { getProduct } from "@/services/products.service"
-import { createVariant, deleteVariant, updateVariant } from "@/services/variants.service"
+import { bulkCreateVariants, deleteVariant, updateVariant } from "@/services/variants.service"
 import { deleteImage, setPrimaryImage, uploadImage } from "@/services/images.service"
 import {
-  createVariantSchema,
+  bulkCreateVariantsSchema,
   editVariantSchema,
-  type CreateVariantFormValues,
+  type BulkCreateVariantsFormValues,
   type EditVariantFormValues,
 } from "@/schemas/variant.schema"
 import type { ProductVariant } from "@/types/api"
+
+const emptyVariant = { skuVariant: "", colorCode: "", colorLabel: "" }
 
 export default function VariantesPage() {
   const { id } = useParams<{ id: string }>()
@@ -59,10 +62,11 @@ export default function VariantesPage() {
   const [editing, setEditing] = useState<ProductVariant | null>(null)
   const [deleting, setDeleting] = useState<ProductVariant | null>(null)
 
-  const createForm = useForm<CreateVariantFormValues>({
-    resolver: zodResolver(createVariantSchema),
-    defaultValues: { skuVariant: "", colorCode: "", colorLabel: "" },
+  const createForm = useForm<BulkCreateVariantsFormValues>({
+    resolver: zodResolver(bulkCreateVariantsSchema),
+    defaultValues: { variants: [{ ...emptyVariant }] },
   })
+  const variantFields = useFieldArray({ control: createForm.control, name: "variants" })
 
   const editForm = useForm<EditVariantFormValues>({
     resolver: zodResolver(editVariantSchema),
@@ -73,13 +77,21 @@ export default function VariantesPage() {
     qc.invalidateQueries({ queryKey })
   }
 
+  function closeCreateDialog() {
+    setCreateOpen(false)
+    createForm.reset({ variants: [{ ...emptyVariant }] })
+  }
+
   const createMutation = useMutation({
-    mutationFn: (values: CreateVariantFormValues) => createVariant(id, values),
-    onSuccess: () => {
+    mutationFn: (values: BulkCreateVariantsFormValues) => bulkCreateVariants(id, values),
+    onSuccess: (created) => {
       invalidate()
-      toast.success("Variante criada com sucesso")
-      setCreateOpen(false)
-      createForm.reset()
+      toast.success(
+        created.length > 1
+          ? `${created.length} variantes criadas com sucesso`
+          : "Variante criada com sucesso"
+      )
+      closeCreateDialog()
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   })
@@ -173,19 +185,25 @@ export default function VariantesPage() {
         {product.data?.variants.map((variant) => (
           <div key={variant.id} className="rounded-lg border border-border bg-bg-surface p-4">
             <div className="flex items-center justify-between">
-              <p>
+              <div className="flex items-center gap-3">
                 <span className="font-mono text-sku text-foreground">
                   {variant.skuVariant}
                 </span>
-                {variant.colorLabel && (
-                  <span className="ml-3 text-body-md text-text-secondary">
+                {variant.colorLabel || variant.colorCode ? (
+                  <Badge variant="outline">
+                    {variant.colorCode && (
+                      <span className="font-mono">{variant.colorCode}</span>
+                    )}
+                    {variant.colorCode && variant.colorLabel && " · "}
                     {variant.colorLabel}
-                  </span>
+                  </Badge>
+                ) : (
+                  <span className="text-body-sm text-text-muted italic">Sem cor cadastrada</span>
                 )}
                 {!variant.isActive && (
-                  <span className="ml-3 text-body-sm text-text-muted">(inativa)</span>
+                  <span className="text-body-sm text-text-muted">(inativa)</span>
                 )}
-              </p>
+              </div>
               <DropdownMenu>
                 <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
                   <MoreHorizontal className="size-4" />
@@ -260,8 +278,8 @@ export default function VariantesPage() {
         ))}
       </div>
 
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
+      <Dialog open={createOpen} onOpenChange={(open) => (open ? setCreateOpen(true) : closeCreateDialog())}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Nova variante</DialogTitle>
           </DialogHeader>
@@ -269,37 +287,74 @@ export default function VariantesPage() {
             onSubmit={createForm.handleSubmit((values) => createMutation.mutate(values))}
             className="space-y-4"
           >
-            <div className="space-y-2">
-              <Label htmlFor="skuVariant">SKU da variante *</Label>
-              <Input
-                id="skuVariant"
-                className="font-mono"
-                placeholder="ex: OB 8142 C2"
-                {...createForm.register("skuVariant")}
-              />
-              {createForm.formState.errors.skuVariant && (
-                <p className="text-body-sm text-danger">
-                  {createForm.formState.errors.skuVariant.message}
-                </p>
-              )}
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
+              {variantFields.fields.map((field, index) => (
+                <div key={field.id} className="space-y-3 rounded-lg border border-border p-3">
+                  {variantFields.fields.length > 1 && (
+                    <div className="flex items-center justify-between">
+                      <p className="text-body-sm text-text-muted">Variante {index + 1}</p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => variantFields.remove(index)}
+                        aria-label={`Remover variante ${index + 1}`}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor={`variants.${index}.skuVariant`}>SKU da variante *</Label>
+                    <Input
+                      id={`variants.${index}.skuVariant`}
+                      className="font-mono"
+                      placeholder="ex: OB 8142"
+                      {...createForm.register(`variants.${index}.skuVariant`)}
+                    />
+                    {createForm.formState.errors.variants?.[index]?.skuVariant && (
+                      <p className="text-body-sm text-danger">
+                        {createForm.formState.errors.variants[index]?.skuVariant?.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor={`variants.${index}.colorCode`}>Código da cor</Label>
+                      <Input
+                        id={`variants.${index}.colorCode`}
+                        placeholder="ex: C2"
+                        {...createForm.register(`variants.${index}.colorCode`)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor={`variants.${index}.colorLabel`}>Nome da cor</Label>
+                      <Input
+                        id={`variants.${index}.colorLabel`}
+                        placeholder="ex: Preto Fosco"
+                        {...createForm.register(`variants.${index}.colorLabel`)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="colorCode">Código da cor</Label>
-                <Input id="colorCode" placeholder="ex: C2" {...createForm.register("colorCode")} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="colorLabel">Nome da cor</Label>
-                <Input
-                  id="colorLabel"
-                  placeholder="ex: Preto Fosco"
-                  {...createForm.register("colorLabel")}
-                />
-              </div>
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => variantFields.append({ ...emptyVariant })}
+            >
+              <Plus className="size-4" />
+              Adicionar outra variante
+            </Button>
             <DialogFooter>
               <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Salvando..." : "Salvar variante"}
+                {createMutation.isPending
+                  ? "Salvando..."
+                  : variantFields.fields.length > 1
+                    ? `Salvar ${variantFields.fields.length} variantes`
+                    : "Salvar variante"}
               </Button>
             </DialogFooter>
           </form>

@@ -1,5 +1,10 @@
 import { api } from "@/lib/axios"
-import type { CreateVariantBody, ProductVariant, UpdateVariantBody } from "@/types/api"
+import type {
+  BulkCreateVariantsBody,
+  CreateVariantBody,
+  ProductVariant,
+  UpdateVariantBody,
+} from "@/types/api"
 
 export async function listVariants(productId: string) {
   const { data } = await api.get<{ data: ProductVariant[] }>(
@@ -11,6 +16,14 @@ export async function listVariants(productId: string) {
 export async function createVariant(productId: string, body: CreateVariantBody) {
   const { data } = await api.post<{ data: ProductVariant }>(
     `/products/${productId}/variants`,
+    body
+  )
+  return data.data
+}
+
+export async function bulkCreateVariants(productId: string, body: BulkCreateVariantsBody) {
+  const { data } = await api.post<{ data: ProductVariant[] }>(
+    `/products/${productId}/variants/bulk`,
     body
   )
   return data.data
