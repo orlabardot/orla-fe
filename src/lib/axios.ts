@@ -17,6 +17,12 @@ api.interceptors.request.use((config) => {
     config.timeout = 35_000
   }
 
+  // Upload de imagem: foto de celular passa fácil de 5MB, e o servidor ainda processa
+  // duas versões com sharp antes de responder. 10s abortava envios que iam completar.
+  if (config.method === "post" && /\/variants\/[^/]+\/images$/.test(config.url ?? "")) {
+    config.timeout = 60_000
+  }
+
   return config
 })
 

@@ -136,6 +136,8 @@ export interface CatalogFilters extends PaginationParams {
 export interface ProductImage {
   id: string
   url: string
+  /** Versão de 400px gerada no upload. A API deriva as duas URLs na leitura. */
+  thumbUrl?: string | null
   isPrimary: boolean
   sortOrder: number
   createdAt: string

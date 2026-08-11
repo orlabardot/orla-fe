@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useFieldArray, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import { ArrowLeft, MoreHorizontal, Plus, Star, Trash2 } from "lucide-react"
+import { ArrowLeft, Loader2, MoreHorizontal, Plus, Star, Trash2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,14 +42,16 @@ import { getProduct } from "@/services/products.service"
 import { bulkCreateVariants, deleteVariant, updateVariant } from "@/services/variants.service"
 import { deleteImage, setPrimaryImage, uploadImage } from "@/services/images.service"
 import {
+  buildVariantSku,
   bulkCreateVariantsSchema,
   editVariantSchema,
+  normalizeColorCode,
   type BulkCreateVariantsFormValues,
   type EditVariantFormValues,
 } from "@/schemas/variant.schema"
-import type { ProductVariant } from "@/types/api"
+import type { BulkCreateVariantsBody, Product, ProductVariant } from "@/types/api"
 
-const emptyVariant = { skuVariant: "", colorCode: "", colorLabel: "" }
+const emptyVariant = { colorCode: "", colorLabel: "" }
 
 export default function VariantesPage() {
   const { id } = useParams<{ id: string }>()
@@ -67,6 +69,8 @@ export default function VariantesPage() {
     defaultValues: { variants: [{ ...emptyVariant }] },
   })
   const variantFields = useFieldArray({ control: createForm.control, name: "variants" })
+  // Alimenta o preview do SKU enquanto o usuário digita o código da cor.
+  const watchedColorCodes = createForm.watch("variants")
 
   const editForm = useForm<EditVariantFormValues>({
     resolver: zodResolver(editVariantSchema),
@@ -83,7 +87,7 @@ export default function VariantesPage() {
   }
 
   const createMutation = useMutation({
-    mutationFn: (values: BulkCreateVariantsFormValues) => bulkCreateVariants(id, values),
+    mutationFn: (body: BulkCreateVariantsBody) => bulkCreateVariants(id, body),
     onSuccess: (created) => {
       invalidate()
       toast.success(
@@ -122,7 +126,12 @@ export default function VariantesPage() {
   const uploadMutation = useMutation({
     mutationFn: ({ variantId, file }: { variantId: string; file: File }) =>
       uploadImage(variantId, file),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate()
+      // Sem isso, upload bem-sucedido e falha de carregamento da imagem ficam
+      // visualmente idênticos (nada acontece na tela).
+      toast.success("Foto adicionada")
+    },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   })
 
@@ -143,6 +152,22 @@ export default function VariantesPage() {
   function openEdit(variant: ProductVariant) {
     setEditing(variant)
     editForm.reset({ colorLabel: variant.colorLabel ?? "", isActive: variant.isActive })
+  }
+
+  /** Só a variante que está recebendo upload mostra estado de envio, não todas. */
+  function isUploadingTo(variantId: string) {
+    return uploadMutation.isPending && uploadMutation.variables?.variantId === variantId
+  }
+
+  /** O formulário coleta só a cor; o SKU de cada variante é derivado do produto. */
+  function submitCreate(values: BulkCreateVariantsFormValues, currentProduct: Product) {
+    createMutation.mutate({
+      variants: values.variants.map((variant) => ({
+        skuVariant: buildVariantSku(currentProduct, variant.colorCode),
+        colorCode: normalizeColorCode(variant.colorCode),
+        colorLabel: variant.colorLabel?.trim() || undefined,
+      })),
+    })
   }
 
   return (
@@ -166,9 +191,9 @@ export default function VariantesPage() {
             <Skeleton className="h-8 w-64" />
           )}
         </h1>
-        <Button onClick={() => setCreateOpen(true)}>
+        <Button onClick={() => setCreateOpen(true)} disabled={!product.data}>
           <Plus className="size-4" />
-          Variante
+          Nova cor
         </Button>
       </div>
 
@@ -222,7 +247,9 @@ export default function VariantesPage() {
                 <div key={image.id} className="group relative size-20 shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element -- thumbnails de fornecedores externos, sem otimização necessária aqui */}
                   <img
-                    src={image.url}
+                    // O thumb de 400px já é gerado no upload; num tile de 80px não faz
+                    // sentido baixar o original de 1200px.
+                    src={image.thumbUrl ?? image.url}
                     alt={variant.skuVariant}
                     className="size-full rounded-md border border-border object-cover"
                   />
@@ -257,16 +284,27 @@ export default function VariantesPage() {
 
               <label
                 htmlFor={`upload-${variant.id}`}
-                className="flex size-20 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-border text-text-muted hover:border-text-muted"
+                aria-busy={isUploadingTo(variant.id)}
+                className="flex size-20 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed border-border text-text-muted hover:border-text-muted aria-busy:pointer-events-none aria-busy:opacity-60"
               >
-                <Plus className="size-4" />
-                <span className="text-center text-[10px] leading-tight">Adicionar</span>
+                {isUploadingTo(variant.id) ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    <span className="text-center text-[10px] leading-tight">Enviando</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="size-4" />
+                    <span className="text-center text-[10px] leading-tight">Adicionar</span>
+                  </>
+                )}
               </label>
               <input
                 id={`upload-${variant.id}`}
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 className="hidden"
+                disabled={isUploadingTo(variant.id)}
                 onChange={(e) => {
                   const file = e.target.files?.[0]
                   if (file) uploadMutation.mutate({ variantId: variant.id, file })
@@ -281,10 +319,38 @@ export default function VariantesPage() {
       <Dialog open={createOpen} onOpenChange={(open) => (open ? setCreateOpen(true) : closeCreateDialog())}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Nova variante</DialogTitle>
+            <DialogTitle>Adicionar cor</DialogTitle>
           </DialogHeader>
+          {product.data && (
+            <div className="rounded-lg border border-border bg-bg-page p-3">
+              <p className="text-body-sm text-text-muted">Modelo</p>
+              <p className="mt-0.5">
+                <span className="font-mono text-sku text-foreground">{product.data.sku}</span>
+                <span className="text-text-muted"> · {product.data.name}</span>
+                {product.data.sizeMm !== null && (
+                  <span className="text-text-muted"> · {product.data.sizeMm}mm</span>
+                )}
+              </p>
+              {product.data.sizeMm === null && (
+                <p className="mt-1.5 text-body-sm text-text-muted">
+                  Este modelo está sem tamanho cadastrado, então o SKU da variante sai sem
+                  ele. Para incluir o tamanho,{" "}
+                  <Link
+                    href={`/admin/produtos/${id}/editar`}
+                    className="underline hover:text-text-secondary"
+                  >
+                    edite o produto
+                  </Link>
+                  .
+                </p>
+              )}
+            </div>
+          )}
           <form
-            onSubmit={createForm.handleSubmit((values) => createMutation.mutate(values))}
+            onSubmit={createForm.handleSubmit((values) => {
+              if (!product.data) return
+              submitCreate(values, product.data)
+            })}
             className="space-y-4"
           >
             <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
@@ -292,43 +358,39 @@ export default function VariantesPage() {
                 <div key={field.id} className="space-y-3 rounded-lg border border-border p-3">
                   {variantFields.fields.length > 1 && (
                     <div className="flex items-center justify-between">
-                      <p className="text-body-sm text-text-muted">Variante {index + 1}</p>
+                      <p className="text-body-sm text-text-muted">Cor {index + 1}</p>
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon-sm"
                         onClick={() => variantFields.remove(index)}
-                        aria-label={`Remover variante ${index + 1}`}
+                        aria-label={`Remover cor ${index + 1}`}
                       >
                         <Trash2 className="size-3.5" />
                       </Button>
                     </div>
                   )}
-                  <div className="space-y-2">
-                    <Label htmlFor={`variants.${index}.skuVariant`}>SKU da variante *</Label>
-                    <Input
-                      id={`variants.${index}.skuVariant`}
-                      className="font-mono"
-                      placeholder="ex: OB 8142"
-                      {...createForm.register(`variants.${index}.skuVariant`)}
-                    />
-                    {createForm.formState.errors.variants?.[index]?.skuVariant && (
-                      <p className="text-body-sm text-danger">
-                        {createForm.formState.errors.variants[index]?.skuVariant?.message}
-                      </p>
-                    )}
-                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor={`variants.${index}.colorCode`}>Código da cor</Label>
+                      <Label htmlFor={`variants.${index}.colorCode`}>Código da cor *</Label>
                       <Input
                         id={`variants.${index}.colorCode`}
-                        placeholder="ex: C2"
+                        className="font-mono"
+                        placeholder="ex: C1"
+                        autoComplete="off"
                         {...createForm.register(`variants.${index}.colorCode`)}
                       />
+                      {createForm.formState.errors.variants?.[index]?.colorCode && (
+                        <p className="text-body-sm text-danger">
+                          {createForm.formState.errors.variants[index]?.colorCode?.message}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`variants.${index}.colorLabel`}>Nome da cor</Label>
+                      <Label htmlFor={`variants.${index}.colorLabel`}>
+                        Nome da cor{" "}
+                        <span className="text-text-muted">(opcional)</span>
+                      </Label>
                       <Input
                         id={`variants.${index}.colorLabel`}
                         placeholder="ex: Preto Fosco"
@@ -336,6 +398,14 @@ export default function VariantesPage() {
                       />
                     </div>
                   </div>
+                  <p className="text-body-sm text-text-muted">
+                    SKU da variante:{" "}
+                    <span className="font-mono text-foreground">
+                      {product.data && watchedColorCodes?.[index]?.colorCode
+                        ? buildVariantSku(product.data, watchedColorCodes[index].colorCode)
+                        : "—"}
+                    </span>
+                  </p>
                 </div>
               ))}
             </div>
@@ -346,15 +416,15 @@ export default function VariantesPage() {
               onClick={() => variantFields.append({ ...emptyVariant })}
             >
               <Plus className="size-4" />
-              Adicionar outra variante
+              Adicionar outra cor
             </Button>
             <DialogFooter>
-              <Button type="submit" disabled={createMutation.isPending}>
+              <Button type="submit" disabled={createMutation.isPending || !product.data}>
                 {createMutation.isPending
                   ? "Salvando..."
                   : variantFields.fields.length > 1
-                    ? `Salvar ${variantFields.fields.length} variantes`
-                    : "Salvar variante"}
+                    ? `Salvar ${variantFields.fields.length} cores`
+                    : "Salvar cor"}
               </Button>
             </DialogFooter>
           </form>
