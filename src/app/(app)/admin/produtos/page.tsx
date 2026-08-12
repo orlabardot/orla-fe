@@ -49,7 +49,21 @@ import type { FrameType, Product } from "@/types/api"
 
 const ALL_VALUE = "all"
 
-function ProductActions({
+function ManageVariantsButton({ productId }: { productId: string }) {
+  const router = useRouter()
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => router.push(`/admin/produtos/${productId}/variantes`)}
+    >
+      <Layers className="size-4" />
+      Gerenciar variantes
+    </Button>
+  )
+}
+
+function ProductMenu({
   product,
   onDelete,
 }: {
@@ -58,30 +72,20 @@ function ProductActions({
 }) {
   const router = useRouter()
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => router.push(`/admin/produtos/${product.id}/variantes`)}
-      >
-        <Layers className="size-4" />
-        Gerenciar variantes
-      </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
-          <MoreHorizontal className="size-4" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => router.push(`/admin/produtos/${product.id}/editar`)}>
-            Editar
-          </DropdownMenuItem>
-          <DropdownMenuItem variant="destructive" onClick={() => onDelete(product)}>
-            <Trash2 className="size-4" />
-            Excluir
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+        <MoreHorizontal className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => router.push(`/admin/produtos/${product.id}/editar`)}>
+          Editar
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onClick={() => onDelete(product)}>
+          <Trash2 className="size-4" />
+          Excluir
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -235,7 +239,8 @@ export default function ProdutosPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-2">
-                    <ProductActions product={product} onDelete={setDeleting} />
+                    <ManageVariantsButton productId={product.id} />
+                    <ProductMenu product={product} onDelete={setDeleting} />
                   </div>
                 </TableCell>
               </TableRow>
@@ -258,15 +263,20 @@ export default function ProdutosPage() {
         )}
 
         {products.data?.data.map((product) => (
-          <div key={product.id} className="rounded-lg border border-border p-4">
-            <p className="font-mono text-body-sm text-text-secondary">{product.sku}</p>
-            <p className="text-foreground">{product.name}</p>
+          <div key={product.id} className="relative rounded-lg border border-border p-4">
+            <div className="absolute right-2 top-2">
+              <ProductMenu product={product} onDelete={setDeleting} />
+            </div>
+            <div className="pr-8">
+              <p className="font-mono text-body-sm text-text-secondary">{product.sku}</p>
+              <p className="text-foreground">{product.name}</p>
+            </div>
             <p className="mt-1 text-body-sm text-text-secondary">
               {product.brand?.name ?? "—"} · {product.variants.length}{" "}
               {product.variants.length === 1 ? "variante" : "variantes"}
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <ProductActions product={product} onDelete={setDeleting} />
+            <div className="mt-3">
+              <ManageVariantsButton productId={product.id} />
             </div>
           </div>
         ))}
