@@ -3,8 +3,9 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
-import { Layers, MoreHorizontal, Plus } from "lucide-react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
+import { Layers, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -29,20 +30,73 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { listProducts } from "@/services/products.service"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { deleteProduct, listProducts } from "@/services/products.service"
 import { listBrands } from "@/services/brands.service"
 import { useDebounce } from "@/hooks/use-debounce"
+import { getApiErrorMessage } from "@/lib/api-error"
 import { frameTypeOptions } from "@/schemas/product.schema"
-import type { FrameType } from "@/types/api"
+import type { FrameType, Product } from "@/types/api"
 
 const ALL_VALUE = "all"
 
-export default function ProdutosPage() {
+function ManageVariantsButton({ productId }: { productId: string }) {
   const router = useRouter()
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => router.push(`/admin/produtos/${productId}/variantes`)}
+    >
+      <Layers className="size-4" />
+      Gerenciar variantes
+    </Button>
+  )
+}
+
+function ProductMenu({
+  product,
+  onDelete,
+}: {
+  product: Product
+  onDelete: (product: Product) => void
+}) {
+  const router = useRouter()
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+        <MoreHorizontal className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => router.push(`/admin/produtos/${product.id}/editar`)}>
+          <Pencil className="size-4" />
+          Editar
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onClick={() => onDelete(product)}>
+          <Trash2 className="size-4" />
+          Excluir
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+export default function ProdutosPage() {
+  const qc = useQueryClient()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
   const [brandId, setBrandId] = useState(ALL_VALUE)
   const [frameType, setFrameType] = useState(ALL_VALUE)
+  const [deleting, setDeleting] = useState<Product | null>(null)
   const debouncedSearch = useDebounce(search)
 
   const brands = useQuery({ queryKey: ["brands"], queryFn: listBrands })
@@ -57,6 +111,19 @@ export default function ProdutosPage() {
         brandId: brandId === ALL_VALUE ? undefined : brandId,
         frameType: frameType === ALL_VALUE ? undefined : (frameType as FrameType),
       }),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteProduct(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["products"] })
+      toast.success("Produto excluído com sucesso")
+      setDeleting(null)
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error))
+      setDeleting(null)
+    },
   })
 
   return (
@@ -127,7 +194,10 @@ export default function ProdutosPage() {
         </Select>
       </div>
 
-      <div className="mt-4 rounded-lg border border-border">
+      {/* Desktop: tabela. Em telas menores que md, os botões de ação ficavam fora da
+          viewport e só apareciam arrastando a tabela pro lado — por isso a versão em
+          cards abaixo, que não depende de scroll horizontal. */}
+      <div className="mt-4 hidden rounded-lg border border-border md:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -170,32 +240,47 @@ export default function ProdutosPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.push(`/admin/produtos/${product.id}/variantes`)}
-                    >
-                      <Layers className="size-4" />
-                      Gerenciar variantes
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
-                        <MoreHorizontal className="size-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => router.push(`/admin/produtos/${product.id}/editar`)}
-                        >
-                          Editar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <ManageVariantsButton productId={product.id} />
+                    <ProductMenu product={product} onDelete={setDeleting} />
                   </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile: cards empilhados, ações sempre visíveis sem scroll horizontal. */}
+      <div className="mt-4 space-y-3 md:hidden">
+        {products.isLoading &&
+          Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 w-full rounded-lg" />
+          ))}
+
+        {!products.isLoading && products.data?.data.length === 0 && (
+          <p className="py-8 text-center text-body-sm text-text-muted">
+            Nenhum produto encontrado
+          </p>
+        )}
+
+        {products.data?.data.map((product) => (
+          <div key={product.id} className="relative rounded-lg border border-border p-4">
+            <div className="absolute right-2 top-2">
+              <ProductMenu product={product} onDelete={setDeleting} />
+            </div>
+            <div className="pr-8">
+              <p className="font-mono text-body-sm text-text-secondary">{product.sku}</p>
+              <p className="text-foreground">{product.name}</p>
+            </div>
+            <p className="mt-1 text-body-sm text-text-secondary">
+              {product.brand?.name ?? "—"} · {product.variants.length}{" "}
+              {product.variants.length === 1 ? "variante" : "variantes"}
+            </p>
+            <div className="mt-3">
+              <ManageVariantsButton productId={product.id} />
+            </div>
+          </div>
+        ))}
       </div>
 
       {products.data && products.data.meta.totalPages > 1 && (
@@ -221,6 +306,27 @@ export default function ProdutosPage() {
           </Button>
         </div>
       )}
+
+      <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir produto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir &quot;{deleting?.name}&quot;? Essa ação não pode ser
+              desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleting && deleteMutation.mutate(deleting.id)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
