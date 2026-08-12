@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { Layers, MoreHorizontal, Plus, Trash2 } from "lucide-react"
+import { Layers, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -78,6 +78,7 @@ function ProductMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => router.push(`/admin/produtos/${product.id}/editar`)}>
+          <Pencil className="size-4" />
           Editar
         </DropdownMenuItem>
         <DropdownMenuItem variant="destructive" onClick={() => onDelete(product)}>
