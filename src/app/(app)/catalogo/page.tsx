@@ -21,6 +21,7 @@ import { VariantCard, VariantCardSkeleton } from "@/components/domain/variant-ca
 import { EmptyState } from "@/components/domain/empty-state"
 import { SelectionBar } from "@/components/domain/selection-bar"
 import { ProductDetailDialog } from "@/components/domain/product-detail-dialog"
+import { CartSheet } from "@/components/domain/cart-sheet"
 import type { CatalogItem, CatalogSort } from "@/types/api"
 
 const GRID_COLUMN_OPTIONS = [4, 5, 6] as const
@@ -173,6 +174,18 @@ export default function CatalogoPage() {
       </div>
 
       <SelectionBar />
+
+      {/* Atalho pro carrinho mais perto de onde o usuário está adicionando
+          itens — no header ele fica longe do polegar ao rolar a grade.
+          Desktop já alcança o header sem esforço, por isso só em mobile. */}
+      <div
+        className={cn(
+          "fixed right-4 z-40 md:hidden",
+          selected.size > 0 ? "bottom-24" : "bottom-4"
+        )}
+      >
+        <CartSheet variant="floating" />
+      </div>
 
       <ProductDetailDialog
         productId={detailTarget?.productId ?? null}

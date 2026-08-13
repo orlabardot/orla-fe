@@ -22,6 +22,11 @@ interface VariantCardProps {
 export function VariantCard({ variant, selected, onToggle, onViewDetails }: VariantCardProps) {
   const [hovered, setHovered] = useState(false)
   const addToCart = useCartStore((state) => state.addItem)
+  // Assina o Record em si, não um getter derivado — mesmo motivo do
+  // selection.store.ts: métodos do Zustand têm referência estável e não
+  // disparam re-render quando os dados mudam.
+  const cartItems = useCartStore((state) => state.items)
+  const inCart = !!cartItems[variant.variantId]
   const secondImageUrl = variant.imageUrls?.[1]
   const previewUrl = hovered && secondImageUrl ? secondImageUrl : variant.primaryImageUrl
 
@@ -119,8 +124,9 @@ export function VariantCard({ variant, selected, onToggle, onViewDetails }: Vari
       </div>
 
       <div className="space-y-1.5 p-3">
-        {(variant.frameType || variant.categoryName) && (
+        {(inCart || variant.frameType || variant.categoryName) && (
           <div className="flex flex-wrap gap-1">
+            {inCart && <Badge>No carrinho</Badge>}
             {variant.frameType && (
               <Badge variant="outline" className="capitalize">
                 {variant.frameType}
