@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import { MoreHorizontal, Plus } from "lucide-react"
+import { MoreHorizontal, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -26,6 +26,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -42,7 +52,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { getApiErrorMessage } from "@/lib/api-error"
 import { useAuthUser } from "@/hooks/use-auth"
-import { createUser, listUsers, updateUser } from "@/services/users.service"
+import { createUser, deleteUser, listUsers, updateUser } from "@/services/users.service"
 import {
   createUserSchema,
   editUserSchema,
@@ -63,6 +73,7 @@ export default function UsuariosPage() {
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editing, setEditing] = useState<ManagedUser | null>(null)
+  const [deleting, setDeleting] = useState<ManagedUser | null>(null)
 
   const createForm = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
@@ -104,6 +115,19 @@ export default function UsuariosPage() {
       setEditing(null)
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteUser(id),
+    onSuccess: () => {
+      invalidate()
+      toast.success("Usuário excluído com sucesso")
+      setDeleting(null)
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error))
+      setDeleting(null)
+    },
   })
 
   function openEdit(user: ManagedUser) {
@@ -189,6 +213,14 @@ export default function UsuariosPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => openEdit(user)}>Editar</DropdownMenuItem>
+                      <DropdownMenuItem
+                        variant="destructive"
+                        disabled={user.id === currentUser?.id}
+                        onClick={() => setDeleting(user)}
+                      >
+                        <Trash2 className="size-4" />
+                        Excluir
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -345,6 +377,27 @@ export default function UsuariosPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir &quot;{deleting?.name}&quot;? Essa ação não pode ser
+              desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleting && deleteMutation.mutate(deleting.id)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
