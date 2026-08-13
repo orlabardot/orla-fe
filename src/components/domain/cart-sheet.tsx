@@ -5,10 +5,17 @@ import Image from "next/image"
 import { ImageOff, Minus, Plus, ShoppingCart, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { cn } from "@/lib/utils"
 import { useCartStore } from "@/stores/cart.store"
 import { CheckoutDialog } from "@/components/domain/checkout-dialog"
 
-export function CartSheet() {
+interface CartSheetProps {
+  // "floating" é o atalho fixo na tela do catálogo (mobile) — mais perto de
+  // onde o usuário está adicionando itens do que o ícone no header.
+  variant?: "icon" | "floating"
+}
+
+export function CartSheet({ variant = "icon" }: CartSheetProps) {
   const [open, setOpen] = useState(false)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const items = useCartStore((state) => state.items)
@@ -21,9 +28,9 @@ export function CartSheet() {
   return (
     <>
       <Button
-        variant="ghost"
-        size="icon"
-        className="relative"
+        variant={variant === "floating" ? "default" : "ghost"}
+        size={variant === "floating" ? "icon-lg" : "icon"}
+        className={cn("relative", variant === "floating" && "rounded-full shadow-lg")}
         onClick={() => setOpen(true)}
         aria-label="Abrir carrinho"
       >
@@ -38,7 +45,9 @@ export function CartSheet() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="flex flex-col border-border bg-bg-surface">
           <SheetHeader>
-            <SheetTitle>Carrinho</SheetTitle>
+            <SheetTitle>
+              Carrinho{totalQuantity > 0 ? ` (${totalQuantity} ${totalQuantity === 1 ? "item" : "itens"})` : ""}
+            </SheetTitle>
           </SheetHeader>
 
           <div className="flex-1 space-y-3 overflow-y-auto px-4">
