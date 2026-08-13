@@ -101,7 +101,7 @@ export function Topbar() {
         <CartSheet />
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="outline-none">
+          <DropdownMenuTrigger className="outline-none" aria-label="Menu do usuário">
             <Avatar>
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
