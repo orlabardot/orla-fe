@@ -1,8 +1,20 @@
 import { beforeEach, describe, expect, it } from "vitest"
 import { useSelectionStore } from "./selection.store"
 
-const variantA = { variantId: "a", skuVariant: "SKU-A", primaryImageUrl: null }
-const variantB = { variantId: "b", skuVariant: "SKU-B", primaryImageUrl: "https://example.com/b.jpg" }
+const variantA = {
+  variantId: "a",
+  skuVariant: "SKU-A",
+  primaryImageUrl: null,
+  productName: "Produto A",
+  colorLabel: null,
+}
+const variantB = {
+  variantId: "b",
+  skuVariant: "SKU-B",
+  primaryImageUrl: "https://example.com/b.jpg",
+  productName: "Produto B",
+  colorLabel: "Preto",
+}
 
 beforeEach(() => {
   useSelectionStore.setState({ selected: new Map() })
