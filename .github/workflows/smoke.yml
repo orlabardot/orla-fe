@@ -1,0 +1,35 @@
+name: Smoke
+
+# Monitor sintético do produto em produção — roda independente de deploy
+# (agenda fixa) pra pegar qualquer indisponibilidade, não só a causada por um
+# deploy ruim (ex: certificado expirado, banco fora do ar, Railway/Vercel com
+# problema). Falha aqui aparece como run vermelho na aba Actions e, por
+# padrão, o GitHub notifica por e-mail quem observa o repositório.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Backend — /health responde ok
+        run: |
+          body=$(curl -sS -f https://orla-be-production.up.railway.app/health)
+          echo "$body"
+          echo "$body" | grep -q '"status":"ok"' || { echo "status não é ok"; exit 1; }
+          echo "$body" | grep -q '"db":"ok"' || { echo "db não é ok"; exit 1; }
+
+      # Confere que a página carrega de verdade, não só que o build compilou
+      # — Vercel considera um deploy "bem-sucedido" mesmo que a aplicação
+      # quebre em runtime (ex: variável de ambiente errada).
+      - name: Frontend — orla-fe.vercel.app carrega o login
+        run: curl -sS -f -o /dev/null https://orla-fe.vercel.app/login
+
+      # Domínio alternativo divulgado pro cliente — checa separado porque é
+      # um alias independente; pode ficar desatualizado sem que o domínio
+      # principal seja afetado.
+      - name: Frontend — maiordistribuidora.vercel.app carrega o login
+        run: curl -sS -f -o /dev/null https://maiordistribuidora.vercel.app/login
