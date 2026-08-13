@@ -6,8 +6,10 @@
 .pnp.js
 .yarn/install-state.gz
 
-#docs
-.md
+#docs (regra tinha um bug — ".md" só ignora um arquivo chamado exatamente
+# ".md", nunca pegou nenhum *.md de verdade. "*.md" fecha essa brecha para
+# qualquer doc/anotação solta na raiz.)
+*.md
 
 # testing
 /coverage
