@@ -258,12 +258,15 @@ export default function VariantesPage() {
                       <Star className="size-3 fill-bg-page text-bg-page" />
                     </span>
                   ) : (
+                    // Sem opacity-0/group-hover aqui de propósito — hover não
+                    // existe em touch/mobile, o que deixava esse botão
+                    // impossível de alcançar fora do desktop com mouse.
                     <button
                       type="button"
                       onClick={() =>
                         setPrimaryMutation.mutate({ variantId: variant.id, imageId: image.id })
                       }
-                      className="absolute top-1 left-1 rounded-full bg-bg-page/80 p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+                      className="absolute top-1 left-1 rounded-full bg-bg-page/80 p-0.5"
                       aria-label="Definir como imagem primária"
                     >
                       <Star className="size-3 text-text-muted" />
@@ -274,7 +277,7 @@ export default function VariantesPage() {
                     onClick={() =>
                       deleteImageMutation.mutate({ variantId: variant.id, imageId: image.id })
                     }
-                    className="absolute top-1 right-1 rounded-full bg-bg-page/80 p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+                    className="absolute top-1 right-1 rounded-full bg-bg-page/80 p-0.5"
                     aria-label="Excluir imagem"
                   >
                     <Trash2 className="size-3 text-danger" />

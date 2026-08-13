@@ -15,3 +15,7 @@ export async function updateUser(id: string, body: UpdateUserBody) {
   const { data } = await api.put<{ data: ManagedUser }>(`/users/${id}`, body)
   return data.data
 }
+
+export async function deleteUser(id: string) {
+  await api.delete(`/users/${id}`)
+}
