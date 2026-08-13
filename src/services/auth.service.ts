@@ -15,3 +15,13 @@ export async function logout() {
   const { data } = await api.post<{ message: string }>("/auth/logout")
   return data
 }
+
+export interface ChangePasswordPayload {
+  currentPassword: string
+  newPassword: string
+}
+
+export async function changePassword(payload: ChangePasswordPayload) {
+  const { data } = await api.put<{ message: string }>("/auth/password", payload)
+  return data
+}
