@@ -1,8 +1,9 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu } from "lucide-react"
+import { KeyRound, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils"
 import { useAuthUser, useLogout } from "@/hooks/use-auth"
 import { useUIStore } from "@/stores/ui.store"
 import { CartSheet } from "@/components/domain/cart-sheet"
+import { ChangePasswordDialog } from "@/components/domain/change-password-dialog"
 
 const navLinks = [
   { href: "/", label: "Dashboard" },
@@ -32,6 +34,7 @@ export function Topbar() {
   const user = useAuthUser()
   const logout = useLogout()
   const setSidebarOpen = useUIStore((state) => state.setSidebarOpen)
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false)
 
   const initials = user?.name
     ? user.name
@@ -111,10 +114,16 @@ export function Topbar() {
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setChangePasswordOpen(true)}>
+              <KeyRound className="size-4" />
+              Trocar senha
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => logout.mutate()}>Sair</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
     </header>
   )
 }
