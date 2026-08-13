@@ -4,6 +4,11 @@ export interface SelectedVariant {
   variantId: string
   skuVariant: string
   primaryImageUrl: string | null
+  // Presentes desde sempre no CatalogItem que os call-sites já passam pro
+  // toggle — só faltavam declarados aqui pra virarem utilizáveis por quem
+  // lê a seleção (ex: multi-add ao carrinho, que precisa montar um CartItem).
+  productName: string
+  colorLabel: string | null
 }
 
 interface SelectionState {

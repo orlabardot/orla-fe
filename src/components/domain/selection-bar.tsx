@@ -2,8 +2,11 @@
 
 import { useState } from "react"
 import Image from "next/image"
+import { ShoppingCart } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { useSelectionStore } from "@/stores/selection.store"
+import { useCartStore } from "@/stores/cart.store"
 import { PDFModal } from "@/components/domain/pdf-modal"
 
 const MAX_PDF_ITEMS = 100
@@ -11,6 +14,7 @@ const MAX_PDF_ITEMS = 100
 export function SelectionBar() {
   const selected = useSelectionStore((state) => state.selected)
   const clear = useSelectionStore((state) => state.clear)
+  const addToCart = useCartStore((state) => state.addItem)
   const [modalOpen, setModalOpen] = useState(false)
 
   const items = Array.from(selected.values())
@@ -19,6 +23,23 @@ export function SelectionBar() {
   const preview = items.slice(0, 3)
   const extra = items.length - preview.length
   const overLimit = items.length > MAX_PDF_ITEMS
+
+  function handleAddAllToCart() {
+    for (const item of items) {
+      addToCart({
+        variantId: item.variantId,
+        skuVariant: item.skuVariant,
+        productName: item.productName,
+        colorLabel: item.colorLabel,
+        primaryImageUrl: item.primaryImageUrl,
+      })
+    }
+    toast.success(
+      items.length === 1
+        ? `${items[0].skuVariant} adicionado ao carrinho`
+        : `${items.length} itens adicionados ao carrinho`
+    )
+  }
 
   return (
     <>
@@ -63,6 +84,10 @@ export function SelectionBar() {
           <div className="ml-auto flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={clear}>
               Limpar
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleAddAllToCart}>
+              <ShoppingCart className="size-3.5" />
+              Adicionar ao carrinho
             </Button>
             <Button size="sm" onClick={() => setModalOpen(true)} disabled={overLimit}>
               Gerar PDF →
