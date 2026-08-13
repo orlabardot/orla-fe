@@ -40,8 +40,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { TagsMultiSelect } from "@/components/domain/tags-multi-select"
 import { deleteProduct, listProducts } from "@/services/products.service"
 import { listBrands } from "@/services/brands.service"
+import { listCategories } from "@/services/categories.service"
+import { listTags } from "@/services/tags.service"
 import { useDebounce } from "@/hooks/use-debounce"
 import { getApiErrorMessage } from "@/lib/api-error"
 import { frameTypeOptions } from "@/schemas/product.schema"
@@ -96,13 +99,17 @@ export default function ProdutosPage() {
   const [search, setSearch] = useState("")
   const [brandId, setBrandId] = useState(ALL_VALUE)
   const [frameType, setFrameType] = useState(ALL_VALUE)
+  const [categoryId, setCategoryId] = useState(ALL_VALUE)
+  const [tagIds, setTagIds] = useState<string[]>([])
   const [deleting, setDeleting] = useState<Product | null>(null)
   const debouncedSearch = useDebounce(search)
 
   const brands = useQuery({ queryKey: ["brands"], queryFn: listBrands })
+  const categories = useQuery({ queryKey: ["categories"], queryFn: listCategories })
+  const tags = useQuery({ queryKey: ["tags"], queryFn: listTags })
 
   const products = useQuery({
-    queryKey: ["products", { page, q: debouncedSearch, brandId, frameType }],
+    queryKey: ["products", { page, q: debouncedSearch, brandId, frameType, categoryId, tagIds }],
     queryFn: () =>
       listProducts({
         page,
@@ -110,6 +117,8 @@ export default function ProdutosPage() {
         q: debouncedSearch || undefined,
         brandId: brandId === ALL_VALUE ? undefined : brandId,
         frameType: frameType === ALL_VALUE ? undefined : (frameType as FrameType),
+        categoryId: categoryId === ALL_VALUE ? undefined : categoryId,
+        tagIds: tagIds.length > 0 ? tagIds.join(",") : undefined,
       }),
   })
 
@@ -192,6 +201,41 @@ export default function ProdutosPage() {
             ))}
           </SelectContent>
         </Select>
+        <Select
+          value={categoryId}
+          onValueChange={(value) => {
+            setCategoryId(value ?? ALL_VALUE)
+            setPage(1)
+          }}
+        >
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Categoria">
+              {(value: string) =>
+                value === ALL_VALUE
+                  ? "Todas as categorias"
+                  : categories.data?.find((category) => category.id === value)?.name
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_VALUE}>Todas as categorias</SelectItem>
+            {categories.data?.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <TagsMultiSelect
+          tags={tags.data ?? []}
+          selectedIds={tagIds}
+          onChange={(ids) => {
+            setTagIds(ids)
+            setPage(1)
+          }}
+          placeholder="Tags"
+          className="w-40"
+        />
       </div>
 
       {/* Desktop: tabela. Em telas menores que md, os botões de ação ficavam fora da
